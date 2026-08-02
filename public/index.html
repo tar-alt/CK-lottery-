@@ -155,116 +155,126 @@
       </div>
     </div>
   </div>
+  
   <script>
-  const socket = io();
+    const socket = io();
 
-  // LocalStorage ထဲမှာ ပိုက်ဆံ သိမ်းဆည်းခြင်း (Refresh လုပ်ရင် မပျောက်အောင်)
-  let userBalance = localStorage.getItem('user_balance') 
-    ? parseFloat(localStorage.getItem('user_balance')) 
-    : 10000;
+    // LocalStorage သုံး၍ Refresh လုပ်လျှင် ပိုက်ဆံမပျောက်အောင် သိမ်းခြင်း
+    let userBalance = localStorage.getItem('user_balance') 
+      ? parseFloat(localStorage.getItem('user_balance')) 
+      : 10000;
 
-  document.getElementById('balance').textContent = userBalance.toLocaleString();
-
-  function updateBalance(newBal) {
-    userBalance = newBal;
-    localStorage.setItem('user_balance', userBalance);
     document.getElementById('balance').textContent = userBalance.toLocaleString();
-  }
 
-  let selectedSelection = null;
-  let activeBet = null;
-  let currentPeriod = '';
-
-  socket.on('timer_tick', (data) => {
-    currentPeriod = data.period;
-    document.getElementById('period-text').textContent = data.period;
-    const s = data.timeLeft < 10 ? '0' + data.timeLeft : data.timeLeft;
-    document.getElementById('timer-display').textContent = `00:${s}`;
-  });
-
-  socket.on('new_game_result', (data) => {
-    addHistoryRow(data.period, data.number, data.bigSmall, data.color);
-
-    // နိုင်/ရှုံး တွက်ချက်ခြင်း
-    if (activeBet && activeBet.period === data.period) {
-      let isWin = false;
-
-      if (activeBet.selection === 'အကြီး' && data.number >= 5) isWin = true;
-      else if (activeBet.selection === 'အသေး' && data.number < 5) isWin = true;
-      else if (activeBet.selection === data.number.toString()) isWin = true;
-      else if (data.color.includes(activeBet.selection.replace('ရောင်', ''))) isWin = true;
-
-      showResultPopup(isWin, data.number);
-
-      if (isWin) {
-        updateBalance(userBalance + (activeBet.amount * 2));
-      }
-
-      activeBet = null;
-      document.getElementById('bet-tracker').classList.add('hidden');
+    function updateBalance(newBal) {
+      userBalance = newBal;
+      localStorage.setItem('user_balance', userBalance);
+      document.getElementById('balance').textContent = userBalance.toLocaleString();
     }
-  });
 
-  function showResultPopup(isWin, num) {
-    const modal = document.getElementById('result-modal');
-    const bg = document.getElementById('result-card-bg');
-    const status = document.getElementById('result-status-text');
-    const detail = document.getElementById('result-detail-text');
+    let selectedSelection = null;
+    let activeBet = null;
+    let currentPeriod = '';
 
-    if (isWin) {
-      bg.className = "result-card result-win";
-      status.textContent = "YOU WIN! 🎉";
-    } else {
-      bg.className = "result-card result-lose";
-      status.textContent = "YOU LOSE 💔";
-    }
-    detail.textContent = `ထွက်ဂဏန်းမှာ [ ${num} ] ဖြစ်ပါသည်`;
-    modal.classList.remove('hidden');
-  }
-
-  function openBetModal(selection) {
-    selectedSelection = selection;
-    document.getElementById('bet-title').textContent = `လောင်းမည်: [ ${selection} ]`;
-    document.getElementById('bet-modal').classList.remove('hidden');
-  }
-
-  function submitBet() {
-    const amt = parseFloat(document.getElementById('bet-amount').value);
-    if (amt > userBalance) return alert("လက်ကျန်ငွေ မလုံလောက်ပါ");
-
-    updateBalance(userBalance - amt);
-
-    activeBet = { period: currentPeriod, selection: selectedSelection, amount: amt };
-    document.getElementById('tracked-selection').textContent = selectedSelection;
-    document.getElementById('tracked-amount').textContent = amt.toLocaleString();
-    document.getElementById('bet-tracker').classList.remove('hidden');
-
-    fetch('/api/bet', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ period: currentPeriod, selection: selectedSelection, amount: amt })
+    socket.on('timer_tick', (data) => {
+      currentPeriod = data.period;
+      document.getElementById('period-text').textContent = data.period;
+      const s = data.timeLeft < 10 ? '0' + data.timeLeft : data.timeLeft;
+      document.getElementById('timer-display').textContent = `00:${s}`;
     });
 
-    closeModal('bet-modal');
-  }
+    socket.on('new_game_result', (data) => {
+      addHistoryRow(data.period, data.number, data.bigSmall, data.color);
 
-  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+      if (activeBet && activeBet.period === data.period) {
+        let isWin = false;
 
-  function addHistoryRow(period, num, bs, color) {
-    const tbody = document.getElementById('history-rows');
-    if(!tbody) return;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${period}</td><td><strong style="color:#f59e0b; font-size:14px;">${num}</strong></td><td>${bs}</td><td>${color}</td>`;
-    tbody.insertBefore(tr, tbody.firstChild);
-    if (tbody.children.length > 10) tbody.removeChild(tbody.lastChild);
-  }
+        if (activeBet.selection === 'အကြီး' && data.number >= 5) isWin = true;
+        else if (activeBet.selection === 'အသေး' && data.number < 5) isWin = true;
+        else if (activeBet.selection === data.number.toString()) isWin = true;
+        else if (data.color.includes(activeBet.selection.replace('ရောင်', ''))) isWin = true;
 
-  fetch('/api/history').then(res => res.json()).then(data => {
-    if(Array.isArray(data)){
-      data.reverse().forEach(item => addHistoryRow(item.period, item.number, item.bigSmall, item.color));
+        showResultPopup(isWin, data.number);
+
+        if (isWin) {
+          updateBalance(userBalance + (activeBet.amount * 2));
+        }
+
+        activeBet = null;
+        document.getElementById('bet-tracker').classList.add('hidden');
+      }
+    });
+
+    function showResultPopup(isWin, num) {
+      const modal = document.getElementById('result-modal');
+      const bg = document.getElementById('result-card-bg');
+      const status = document.getElementById('result-status-text');
+      const detail = document.getElementById('result-detail-text');
+
+      if (isWin) {
+        bg.className = "result-card result-win";
+        status.textContent = "YOU WIN! 🎉";
+      } else {
+        bg.className = "result-card result-lose";
+        status.textContent = "YOU LOSE 💔";
+      }
+      detail.textContent = `ထွက်ဂဏန်းမှာ [ ${num} ] ဖြစ်ပါသည်`;
+      modal.classList.remove('hidden');
     }
-  });
-</script>
+
+    function openBetModal(selection) {
+      selectedSelection = selection;
+      document.getElementById('bet-title').textContent = `လောင်းမည်: [ ${selection} ]`;
+      document.getElementById('bet-modal').classList.remove('hidden');
+    }
+
+    function submitBet() {
+      const amt = parseFloat(document.getElementById('bet-amount').value);
+      if (amt > userBalance) return alert("လက်ကျန်ငွေ မလုံလောက်ပါ");
+
+      updateBalance(userBalance - amt);
+
+      activeBet = { period: currentPeriod, selection: selectedSelection, amount: amt };
+      document.getElementById('tracked-selection').textContent = selectedSelection;
+      document.getElementById('tracked-amount').textContent = amt.toLocaleString();
+      document.getElementById('bet-tracker').classList.remove('hidden');
+
+      fetch('/api/bet', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ period: currentPeriod, selection: selectedSelection, amount: amt })
+      });
+
+      closeModal('bet-modal');
+    }
+
+    function openTxModal(type) {
+      document.getElementById('tx-title').textContent = type === 'Deposit' ? 'ငွေသွင်းမည်' : 'ငွေထုတ်မည်';
+      document.getElementById('tx-modal').classList.remove('hidden');
+    }
+
+    function submitTx() {
+      alert("တောင်းဆိုမှု အောင်မြင်ပါသည်။ Admin ထံ ပေးပို့လိုက်ပါပြီ။");
+      closeModal('tx-modal');
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function addHistoryRow(period, num, bs, color) {
+      const tbody = document.getElementById('history-rows');
+      if(!tbody) return;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${period}</td><td><strong style="color:#f59e0b; font-size:14px;">${num}</strong></td><td>${bs}</td><td>${color}</td>`;
+      tbody.insertBefore(tr, tbody.firstChild);
+      if (tbody.children.length > 10) tbody.removeChild(tbody.lastChild);
+    }
+
+    fetch('/api/history').then(res => res.json()).then(data => {
+      if(Array.isArray(data)){
+        data.slice().reverse().forEach(item => addHistoryRow(item.period, item.number, item.bigSmall, item.color));
+      }
+    });
+  </script>
 </body>
 </html>
 
