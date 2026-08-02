@@ -6,19 +6,11 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-
-// Enable CORS completely so any phone/client can connect smoothly
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Database setup
 const db = new sqlite3.Database('./game.db');
 
 db.serialize(() => {
@@ -27,35 +19,48 @@ db.serialize(() => {
     period TEXT,
     number INTEGER,
     big_small TEXT,
-    color TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    color TEXT
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS bets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    socket_id TEXT,
+    period TEXT,
+    selection TEXT,
+    amount REAL
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT,
     amount REAL,
-    status TEXT DEFAULT 'PENDING',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    status TEXT DEFAULT 'PENDING'
   )`);
 });
 
 let currentPeriod = 202608020001;
 let timeLeft = 60;
+let forcedResultNumber = null; // Admin Control Override
 
-// Central Game Loop
 setInterval(() => {
   timeLeft--;
 
-  // Send current time status to ALL connected clients
   io.emit('timer_tick', {
     period: currentPeriod,
     timeLeft: timeLeft,
-    canBet: timeLeft > 15
+    canBet: timeLeft > 10
   });
 
   if (timeLeft <= 0) {
-    const winningNum = Math.floor(Math.random() * 10);
+    // Determine winner: Admin forced number OR random
+    let winningNum;
+    if (forcedResultNumber !== null && forcedResultNumber >= 0 && forcedResultNumber <= 9) {
+      winningNum = forcedResultNumber;
+      forcedResultNumber = null; // Reset forced number
+    } else {
+      winningNum = Math.floor(Math.random() * 10);
+    }
+
     const isBig = winningNum >= 5;
     const bsText = isBig ? "အကြီး" : "အသေး";
 
@@ -65,6 +70,7 @@ setInterval(() => {
     else if (winningNum % 2 === 0) colorText = "အနီရောင်";
     else colorText = "အစိမ်းရောင်";
 
+    // Save Game Result
     db.run(
       `INSERT INTO game_history (period, number, big_small, color) VALUES (?, ?, ?, ?)`,
       [currentPeriod, winningNum, bsText, colorText],
@@ -85,10 +91,32 @@ setInterval(() => {
   }
 }, 1000);
 
-// API Routes
+// API Endpoints
 app.get('/api/history', (req, res) => {
   db.all(`SELECT period, number, big_small, color FROM game_history ORDER BY id DESC LIMIT 10`, [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows || []);
+  });
+});
+
+// Place Bet
+app.post('/api/bet', (req, res) => {
+  const { socketId, period, selection, amount } = req.body;
+  db.run(`INSERT INTO bets (socket_id, period, selection, amount) VALUES (?, ?, ?, ?)`,
+    [socketId, period, selection, amount], (err) => {
+      if (err) return res.status(500).json({ success: false });
+      res.json({ success: true });
+    });
+});
+
+// Admin Control APIs
+app.post('/api/admin/set-next-number', (req, res) => {
+  const { number } = req.body;
+  forcedResultNumber = parseInt(number);
+  res.json({ success: true, message: `နောက်တစ်ကြိမ်ထွက်ဂဏန်းကို [ ${forcedResultNumber} ] အဖြစ် သတ်မှတ်လိုက်ပါပြီ` });
+});
+
+app.get('/api/admin/transactions', (req, res) => {
+  db.all(`SELECT * FROM transactions WHERE status = 'PENDING' ORDER BY id DESC`, [], (err, rows) => {
     res.json(rows || []);
   });
 });
@@ -96,13 +124,10 @@ app.get('/api/history', (req, res) => {
 app.post('/api/transaction', (req, res) => {
   const { type, amount } = req.body;
   db.run(`INSERT INTO transactions (type, amount) VALUES (?, ?)`, [type, amount], function(err) {
-    if (err) return res.status(500).json({ success: false });
-    res.json({ success: true, message: `${type === 'Deposit' ? 'ငွေသွင်း' : 'ငွေထုတ်'} တောင်းဆိုမှု အောင်မြင်ပါသည်။` });
+    res.json({ success: true, message: "တောင်းဆိုမှု အောင်မြင်ပါသည်။ Admin အတည်ပြုပေးပါမည်။" });
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
