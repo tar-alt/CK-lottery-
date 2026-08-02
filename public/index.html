@@ -15,6 +15,7 @@
     .btn-action { border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; color: white; cursor: pointer; }
     .btn-deposit { background-color: #10b981; }
     .btn-withdraw { background-color: #ef4444; }
+    .btn-logout { background-color: #475569; font-size: 12px; padding: 6px 10px; }
     .balance-box { background-color: #1e293b; padding: 8px 14px; border-radius: 20px; font-weight: bold; color: #f59e0b; border: 1px solid #334155; }
 
     .timer-card { background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: relative; }
@@ -42,88 +43,107 @@
 
     .tracker { background: #334155; padding: 10px 14px; border-radius: 10px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
 
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 100; }
-    .modal-content { background: #1e293b; padding: 24px; border-radius: 20px; width: 90%; max-width: 360px; text-align: center; }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 100; }
+    .modal-content { background: #1e293b; padding: 24px; border-radius: 20px; width: 90%; max-width: 360px; text-align: center; border: 1px solid #334155; }
     .hidden { display: none !important; }
     
     .result-card { padding: 20px; border-radius: 16px; margin-bottom: 16px; }
     .result-win { background: rgba(16, 185, 129, 0.2); border: 2px solid #10b981; color: #10b981; }
     .result-lose { background: rgba(239, 68, 68, 0.2); border: 2px solid #ef4444; color: #ef4444; }
     
-    input[type="number"] { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 16px; margin: 16px 0; text-align: center; }
-    .btn-confirm { width: 100%; padding: 12px; background: #f59e0b; color: white; font-weight: bold; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; }
+    input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 16px; margin: 8px 0; text-align: center; }
+    .btn-confirm { width: 100%; padding: 12px; background: #f59e0b; color: white; font-weight: bold; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; margin-top: 8px; }
     .btn-close { margin-top: 10px; background: transparent; border: none; color: #94a3b8; cursor: pointer; }
+    .toggle-link { color: #3b82f6; font-size: 13px; margin-top: 12px; display: inline-block; cursor: pointer; text-decoration: underline; }
   </style>
 </head>
 <body>
 
-  <!-- Header -->
-  <div class="header">
-    <div class="logo">👑 CKLOTTERY</div>
-    <div class="actions">
-      <button class="btn-action btn-deposit" onclick="openTxModal('Deposit')">သွင်း</button>
-      <button class="btn-action btn-withdraw" onclick="openTxModal('Withdraw')">ထုတ်</button>
-      <div class="balance-box">K<span id="balance">10,000</span></div>
+  <!-- App Main Content -->
+  <div id="app-content" class="hidden">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">👑 CKLOTTERY</div>
+      <div class="actions">
+        <button class="btn-action btn-deposit" onclick="openTxModal('Deposit')">သွင်း</button>
+        <button class="btn-action btn-withdraw" onclick="openTxModal('Withdraw')">ထုတ်</button>
+        <div class="balance-box">K<span id="balance">0</span></div>
+        <button class="btn-action btn-logout" onclick="logout()">ထွက်မည်</button>
+      </div>
+    </div>
+
+    <!-- Timer Card -->
+    <div class="timer-card">
+      <div>
+        <div style="font-size: 13px; opacity: 0.9;">Win Go 1Min</div>
+        <div id="period-text" style="font-size: 14px; font-weight: bold; margin-top: 4px;">--</div>
+      </div>
+      <div class="timer-display" id="timer-display">00:60</div>
+      <div id="lock-banner" class="lock-banner">လောင်းကြေးပိတ်ပါပြီ</div>
+    </div>
+
+    <!-- Bet Tracker -->
+    <div id="bet-tracker" class="tracker hidden">
+      <span>လောင်းထားသည်: <b id="tracked-selection" style="color: #f59e0b;">-</b></span>
+      <span>ပမာဏ: <b id="tracked-amount" style="color: #10b981;">0</b> ကျပ်</span>
+    </div>
+
+    <!-- Colors -->
+    <div class="bet-grid">
+      <button class="btn-color bg-green bet-btn" onclick="openBetModal('အစိမ်း')">အစိမ်း</button>
+      <button class="btn-color bg-purple bet-btn" onclick="openBetModal('ခရမ်း')">ခရမ်း</button>
+      <button class="btn-color bg-red bet-btn" onclick="openBetModal('အနီ')">အနီ</button>
+    </div>
+
+    <!-- Numbers -->
+    <div class="num-grid">
+      <button class="btn-num bg-purple bet-btn" onclick="openBetModal('0')">0</button>
+      <button class="btn-num bg-green bet-btn" onclick="openBetModal('1')">1</button>
+      <button class="btn-num bg-red bet-btn" onclick="openBetModal('2')">2</button>
+      <button class="btn-num bg-green bet-btn" onclick="openBetModal('3')">3</button>
+      <button class="btn-num bg-red bet-btn" onclick="openBetModal('4')">4</button>
+      <button class="btn-num bg-purple bet-btn" onclick="openBetModal('5')">5</button>
+      <button class="btn-num bg-red bet-btn" onclick="openBetModal('6')">6</button>
+      <button class="btn-num bg-green bet-btn" onclick="openBetModal('7')">7</button>
+      <button class="btn-num bg-red bet-btn" onclick="openBetModal('8')">8</button>
+      <button class="btn-num bg-green bet-btn" onclick="openBetModal('9')">9</button>
+    </div>
+
+    <!-- Big/Small -->
+    <div class="size-grid">
+      <button class="btn-size bg-orange bet-btn" onclick="openBetModal('အကြီး')">အကြီး (5-9)</button>
+      <button class="btn-size bg-blue bet-btn" onclick="openBetModal('အသေး')">အသေး (0-4)</button>
+    </div>
+
+    <!-- History Table -->
+    <div class="history-card">
+      <h3>ထွက်ဂဏန်း မှတ်တမ်း</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ပွဲစဉ်</th>
+            <th>ဂဏန်း</th>
+            <th>အသေး/အကြီး</th>
+            <th>အရောင်</th>
+          </tr>
+        </thead>
+        <tbody id="history-rows"></tbody>
+      </table>
     </div>
   </div>
 
-  <!-- Timer Card -->
-  <div class="timer-card">
-    <div>
-      <div style="font-size: 13px; opacity: 0.9;">Win Go 1Min</div>
-      <div id="period-text" style="font-size: 14px; font-weight: bold; margin-top: 4px;">--</div>
+  <!-- Auth Modal (Login / Register) -->
+  <div id="auth-modal" class="modal">
+    <div class="modal-content">
+      <h2 id="auth-title" style="color: #f59e0b; margin-bottom: 12px;">Login ဝင်မည်</h2>
+      <input type="text" id="auth-phone" placeholder="ဖုန်းနံပါတ် (ဥပမာ- 09123456789)">
+      <input type="password" id="auth-pass" placeholder="စကားဝှက်">
+      <button class="btn-confirm" id="auth-submit-btn" onclick="handleAuth()">Login ဝင်မည်</button>
+      
+      <div>
+        <span class="toggle-link" id="auth-toggle-btn" onclick="toggleAuthMode()">အကောင့်အသစ်ဖွင့်မည်</span>
+      </div>
     </div>
-    <div class="timer-display" id="timer-display">00:60</div>
-    <div id="lock-banner" class="lock-banner">လောင်းကြေးပိတ်ပါပြီ</div>
-  </div>
-
-  <!-- Bet Tracker -->
-  <div id="bet-tracker" class="tracker hidden">
-    <span>လောင်းထားသည်: <b id="tracked-selection" style="color: #f59e0b;">-</b></span>
-    <span>ပမာဏ: <b id="tracked-amount" style="color: #10b981;">0</b> ကျပ်</span>
-  </div>
-
-  <!-- Colors -->
-  <div class="bet-grid">
-    <button class="btn-color bg-green bet-btn" onclick="openBetModal('အစိမ်း')">အစိမ်း</button>
-    <button class="btn-color bg-purple bet-btn" onclick="openBetModal('ခရမ်း')">ခရမ်း</button>
-    <button class="btn-color bg-red bet-btn" onclick="openBetModal('အနီ')">အနီ</button>
-  </div>
-
-  <!-- Numbers -->
-  <div class="num-grid">
-    <button class="btn-num bg-purple bet-btn" onclick="openBetModal('0')">0</button>
-    <button class="btn-num bg-green bet-btn" onclick="openBetModal('1')">1</button>
-    <button class="btn-num bg-red bet-btn" onclick="openBetModal('2')">2</button>
-    <button class="btn-num bg-green bet-btn" onclick="openBetModal('3')">3</button>
-    <button class="btn-num bg-red bet-btn" onclick="openBetModal('4')">4</button>
-    <button class="btn-num bg-purple bet-btn" onclick="openBetModal('5')">5</button>
-    <button class="btn-num bg-red bet-btn" onclick="openBetModal('6')">6</button>
-    <button class="btn-num bg-green bet-btn" onclick="openBetModal('7')">7</button>
-    <button class="btn-num bg-red bet-btn" onclick="openBetModal('8')">8</button>
-    <button class="btn-num bg-green bet-btn" onclick="openBetModal('9')">9</button>
-  </div>
-
-  <!-- Big/Small -->
-  <div class="size-grid">
-    <button class="btn-size bg-orange bet-btn" onclick="openBetModal('အကြီး')">အကြီး (5-9)</button>
-    <button class="btn-size bg-blue bet-btn" onclick="openBetModal('အသေး')">အသေး (0-4)</button>
-  </div>
-
-  <!-- History Table -->
-  <div class="history-card">
-    <h3>ထွက်ဂဏန်း မှတ်တမ်း</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>ပွဲစဉ်</th>
-          <th>ဂဏန်း</th>
-          <th>အသေး/အကြီး</th>
-          <th>အရောင်</th>
-        </tr>
-      </thead>
-      <tbody id="history-rows"></tbody>
-    </table>
   </div>
 
   <!-- Bet Modal -->
@@ -160,26 +180,101 @@
   <script>
     const socket = io();
 
-    // 1. Balance ကို LocalStorage တွင် အတည်မှတ်ထားခြင်း (Refresh သည့်အခါ 10000 ပြန်မဖြစ်တော့ပါ)
-    let savedBal = localStorage.getItem('user_balance');
-    let userBalance = (savedBal !== null && !isNaN(parseFloat(savedBal))) 
-      ? parseFloat(savedBal) 
-      : 10000;
-
-    function updateBalance(newBal) {
-      userBalance = Math.max(0, newBal);
-      localStorage.setItem('user_balance', userBalance);
-      document.getElementById('balance').textContent = userBalance.toLocaleString();
-    }
-
-    updateBalance(userBalance);
+    let currentUser = null;
+    let isRegisterMode = false;
+    let userBalance = 0;
 
     let selectedSelection = null;
     let activeBet = null;
     let currentPeriod = '';
     let isLocked = false;
 
-    // 2. Refresh လုပ်လျှင်လည်း လောင်းထားသော အချက်အလက်များ မပျောက်စေရန် LocalStorage မှ ပြန်ခေါ်ခြင်း
+    // Auto Login စစ်ဆေးခြင်း
+    function checkAutoLogin() {
+      const savedPhone = localStorage.getItem('user_phone');
+      if (savedPhone) {
+        fetch(`/api/user/${savedPhone}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              loginSuccess(data.user);
+            } else {
+              localStorage.removeItem('user_phone');
+            }
+          });
+      }
+    }
+
+    function toggleAuthMode() {
+      isRegisterMode = !isRegisterMode;
+      const title = document.getElementById('auth-title');
+      const submitBtn = document.getElementById('auth-submit-btn');
+      const toggleBtn = document.getElementById('auth-toggle-btn');
+
+      if (isRegisterMode) {
+        title.textContent = "အကောင့်အသစ်ဖွင့်မည်";
+        submitBtn.textContent = "Register ပြုလုပ်မည်";
+        toggleBtn.textContent = "အကောင့်ရှိပြီးသားပါ (Login ဝင်မည်)";
+      } else {
+        title.textContent = "Login ဝင်မည်";
+        submitBtn.textContent = "Login ဝင်မည်";
+        toggleBtn.textContent = "အကောင့်အသစ်ဖွင့်မည်";
+      }
+    }
+
+    function handleAuth() {
+      const phone = document.getElementById('auth-phone').value;
+      const password = document.getElementById('auth-pass').value;
+
+      if (!phone || !password) return alert("အချက်အလက်များ အပြည့်အစုံ ရိုက်ထည့်ပါ");
+
+      const endpoint = isRegisterMode ? '/api/register' : '/api/login';
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          loginSuccess(data.user);
+        } else {
+          alert(data.message);
+        }
+      });
+    }
+
+    function loginSuccess(user) {
+      currentUser = user;
+      localStorage.setItem('user_phone', user.phone);
+      updateBalance(user.balance);
+
+      document.getElementById('auth-modal').classList.add('hidden');
+      document.getElementById('app-content').classList.remove('hidden');
+
+      restoreActiveBet();
+    }
+
+    function logout() {
+      localStorage.removeItem('user_phone');
+      localStorage.removeItem('active_bet');
+      location.reload();
+    }
+
+    function updateBalance(newBal) {
+      userBalance = Math.max(0, newBal);
+      document.getElementById('balance').textContent = userBalance.toLocaleString();
+      
+      if (currentUser) {
+        fetch('/api/user/update-balance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: currentUser.phone, balance: userBalance })
+        });
+      }
+    }
+
     function restoreActiveBet() {
       const savedBet = localStorage.getItem('active_bet');
       if (savedBet) {
@@ -189,7 +284,6 @@
         document.getElementById('bet-tracker').classList.remove('hidden');
       }
     }
-    restoreActiveBet();
 
     socket.on('timer_tick', (data) => {
       currentPeriod = data.period;
@@ -199,12 +293,11 @@
       const s = timeLeft < 10 ? '0' + timeLeft : timeLeft;
       document.getElementById('timer-display').textContent = `00:${s}`;
 
-      // 3. နောက်ဆုံး ၁၀ စက္ကန့်တွင် လောင်းကြေး ပိတ်ခြင်း (Disable buttons & Close Modal)
       if (timeLeft <= 10) {
         if (!isLocked) {
           isLocked = true;
           toggleBetButtons(true);
-          closeModal('bet-modal'); // တကယ်လို့ Modal ပွင့်နေရင် ပိတ်လိုက်မည်
+          closeModal('bet-modal');
           document.getElementById('lock-banner').style.display = 'block';
         }
       } else {
@@ -224,7 +317,6 @@
     socket.on('new_game_result', (data) => {
       addHistoryRow(data.period, data.number, data.bigSmall, data.color);
 
-      // ပွဲစဉ်တူပါက နိုင်/ရှုံး တွက်ချက်ခြင်း
       if (activeBet && String(activeBet.period) === String(data.period)) {
         let isWin = false;
 
@@ -242,7 +334,6 @@
 
         showResultPopup(isWin, data.number);
 
-        // လောင်းထားတာ ပိုင်နိုင်စွာ ပို့ပြီးလျှင် Clear လုပ်မည်
         activeBet = null;
         localStorage.removeItem('active_bet');
         document.getElementById('bet-tracker').classList.add('hidden');
@@ -288,8 +379,6 @@
       updateBalance(userBalance - amt);
 
       activeBet = { period: currentPeriod, selection: selectedSelection, amount: amt };
-      
-      // LocalStorage တွင် active_bet ကိုပါ သိမ်းဆည်းထားမည်
       localStorage.setItem('active_bet', JSON.stringify(activeBet));
 
       document.getElementById('tracked-selection').textContent = selectedSelection;
@@ -334,6 +423,9 @@
         data.slice().reverse().forEach(item => addHistoryRow(item.period, item.number, item.bigSmall, item.color));
       }
     }).catch(e => console.log(e));
+
+    // စဖွင့်ချိန် Auto Login စစ်မည်
+    checkAutoLogin();
   </script>
 </body>
 </html>
