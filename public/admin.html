@@ -2,46 +2,115 @@
 <html lang="my">
 <head>
   <meta charset="UTF-8">
-  <title>CK Lottery Control Center</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CK Lottery - Admin Dashboard</title>
   <style>
-    body { background: #0f172a; color: white; font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-    .card { background: #1e293b; padding: 20px; border-radius: 16px; margin-bottom: 20px; border: 1px solid #334155; }
-    h2, h3 { color: #f59e0b; margin-bottom: 12px; }
-    input, select { padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; margin-right: 8px; }
-    button { padding: 10px 16px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: #3b82f6; color: white; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #0f172a; color: white; padding: 20px; max-width: 900px; margin: 0 auto; min-height: 100vh; }
+    
+    .card { background: #1e293b; padding: 20px; border-radius: 16px; margin-bottom: 20px; border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    h2 { color: #f59e0b; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    h3 { color: #38bdf8; margin-bottom: 12px; font-size: 16px; }
+    
+    input { padding: 10px 14px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; outline: none; }
+    button { padding: 10px 16px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: #3b82f6; color: white; transition: 0.15s; }
+    button:active { transform: scale(0.95); }
+    
     .btn-danger { background: #ef4444; }
     .btn-success { background: #10b981; }
+    .btn-logout { background: #475569; font-size: 13px; padding: 6px 12px; }
+
     table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; }
-    th, td { padding: 10px; border-bottom: 1px solid #334155; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid #334155; font-size: 14px; }
+    th { color: #94a3b8; font-weight: 600; }
+
+    /* Modal Styling */
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: #1e293b; padding: 28px; border-radius: 20px; width: 90%; max-width: 360px; border: 1px solid #334155; text-align: center; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <h2>👑 Admin Control Center</h2>
 
-  <!-- Force Result -->
-  <div class="card">
-    <h3>🎯 ထွက်ဂဏန်း ထိန်းချုပ်ရန် (Forced Winning Number)</h3>
-    <input type="number" id="force-num" min="0" max="9" placeholder="ဂဏန်း (0-9)">
-    <button class="btn-success" onclick="setForceResult()">သတ်မှတ်မည်</button>
+  <!-- Admin Login Modal -->
+  <div id="admin-login-modal" class="modal">
+    <div class="modal-content">
+      <h2 style="color: #f59e0b; justify-content: center; margin-bottom: 12px;">👑 Admin Login</h2>
+      <p style="color: #94a3b8; font-size: 13px; margin-bottom: 16px;">Admin Panel အသုံးပြုရန် Login ဝင်ပါ</p>
+      <input type="text" id="admin-phone" placeholder="Admin Phone" style="width: 100%; margin-bottom: 10px;">
+      <input type="password" id="admin-pass" placeholder="Admin Password" style="width: 100%; margin-bottom: 16px;">
+      <button style="width: 100%; padding: 12px;" class="btn-success" onclick="adminLogin()">Login ဝင်မည်</button>
+    </div>
   </div>
 
-  <!-- User Management -->
-  <div class="card">
-    <h3>👥 User မ်ားအား ထိန်းချုပ်ရန်</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>ဖုန်းနံပါတ်</th>
-          <th>Balance (K)</th>
-          <th>အခြေအနေ</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="user-rows"></tbody>
-    </table>
+  <!-- Admin Dashboard Panel -->
+  <div id="admin-panel" class="hidden">
+    <h2>
+      <span>👑 Admin Control Center</span>
+      <button class="btn-logout" onclick="adminLogout()">Logout</button>
+    </h2>
+
+    <!-- Force Win Number -->
+    <div class="card">
+      <h3>🎯 ထွက်ဂဏန်း ထိန်းချုပ်ရန် (Forced Result)</h3>
+      <div style="display: flex; gap: 10px;">
+        <input type="number" id="force-num" min="0" max="9" placeholder="ဂဏန်း (0-9)" style="width: 140px;">
+        <button class="btn-success" onclick="setForceResult()">သတ်မှတ်မည်</button>
+      </div>
+    </div>
+
+    <!-- User Control -->
+    <div class="card">
+      <h3>👥 User အကောင့်များ မန်နေးဂျာ</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ဖုန်းနံပါတ်</th>
+            <th>Balance (K)</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="user-rows"></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
+    function checkAdminSession() {
+      const token = localStorage.getItem('admin_token');
+      if (token === 'ADMIN_SECRET_SESSION_TOKEN') {
+        document.getElementById('admin-login-modal').classList.add('hidden');
+        document.getElementById('admin-panel').classList.remove('hidden');
+        loadUsers();
+      }
+    }
+
+    function adminLogin() {
+      const phone = document.getElementById('admin-phone').value;
+      const password = document.getElementById('admin-pass').value;
+
+      fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          localStorage.setItem('admin_token', data.token);
+          checkAdminSession();
+        } else {
+          alert(data.message);
+        }
+      });
+    }
+
+    function adminLogout() {
+      localStorage.removeItem('admin_token');
+      location.reload();
+    }
+
     function loadUsers() {
       fetch('/api/admin/users').then(r => r.json()).then(users => {
         const tbody = document.getElementById('user-rows');
@@ -50,9 +119,16 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td><b>${u.phone}</b></td>
-            <td><input type="number" value="${u.balance}" id="bal-${u.phone}" style="width: 100px;"> <button onclick="updateBalance('${u.phone}')">ပြင်မည်</button></td>
-            <td><span style="color:${u.status === 'BANNED' ? '#ef4444' : '#10b981'}">${u.status}</span></td>
-            <td><button class="${u.status === 'BANNED' ? 'btn-success' : 'btn-danger'}" onclick="toggleBan('${u.phone}', '${u.status}')">${u.status === 'BANNED' ? 'Unban' : 'Ban'}</button></td>
+            <td>
+              <input type="number" value="${u.balance}" id="bal-${u.phone}" style="width: 110px;">
+              <button onclick="updateBalance('${u.phone}')">Save</button>
+            </td>
+            <td><span style="color:${u.status === 'BANNED' ? '#ef4444' : '#10b981'}; font-weight: bold;">${u.status}</span></td>
+            <td>
+              <button class="${u.status === 'BANNED' ? 'btn-success' : 'btn-danger'}" onclick="toggleBan('${u.phone}', '${u.status}')">
+                ${u.status === 'BANNED' ? 'Unban' : 'Ban'}
+              </button>
+            </td>
           `;
           tbody.appendChild(tr);
         });
@@ -87,7 +163,7 @@
       }).then(r => r.json()).then(d => alert(d.message));
     }
 
-    loadUsers();
+    checkAdminSession();
   </script>
 </body>
 </html>
