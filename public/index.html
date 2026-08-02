@@ -43,7 +43,7 @@
     .nav-item.active { color: #f97316; }
 
     .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 500; backdrop-filter: blur(6px); }
-    .modal-content { background: #1f2937; padding: 20px; border-radius: 24px; width: 90%; max-width: 380px; text-align: center; border: 1px solid #374151; }
+    .modal-content { background: #1f2937; padding: 20px; border-radius: 24px; width: 90%; max-width: 380px; text-align: center; border: 1px solid #374151; position: relative; z-index: 600; }
     .hidden { display: none !important; }
 
     input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #374151; background: #111827; color: white; font-size: 15px; margin: 8px 0; text-align: center; outline: none; }
@@ -65,13 +65,22 @@
 
     .tx-item { background: #111827; padding: 12px; border-radius: 12px; border: 1px solid #1f2937; margin-bottom: 10px; text-align: left; font-size: 13px; }
 
-    /* Clickable Text / Button Fix */
-    .clickable-text {
-      cursor: pointer;
+    /* Clickable / Auth Toggle Button Fix */
+    .auth-toggle-btn {
+      background: transparent !important;
+      border: none !important;
+      color: #6366f1 !important;
+      font-size: 14px !important;
+      font-weight: bold !important;
+      padding: 12px 20px !important;
+      margin-top: 10px !important;
+      cursor: pointer !important;
+      position: relative !important;
+      z-index: 1000 !important;
+      pointer-events: auto !important;
+      display: inline-block !important;
       user-select: none;
       -webkit-user-select: none;
-      display: inline-block;
-      padding: 8px 12px;
     }
   </style>
 </head>
@@ -249,8 +258,8 @@
       <button class="btn-confirm btn-press" id="auth-submit-btn" onclick="handleAuth()">Login ဝင်မည်</button>
       
       <!-- ပြင်ဆင်ပြီးသား Toggle Button -->
-      <div style="margin-top: 14px;">
-        <button type="button" class="clickable-text" style="background: none; border: none; color: #6366f1; font-size: 14px; font-weight: bold;" onclick="toggleAuthMode()">
+      <div style="margin-top: 10px; position: relative; z-index: 999;">
+        <button type="button" class="auth-toggle-btn" onclick="toggleAuthMode(event)" ontouchstart="toggleAuthMode(event)">
           <span id="auth-toggle-text">အကောင့်အသစ်ဖွင့်မည်</span>
         </button>
       </div>
@@ -281,8 +290,12 @@
       }
     }
 
-    // Register / Login toggle ပြုလုပ်ပေးမည့် ပြင်ဆင်ပြီးသား Function
-    function toggleAuthMode() {
+    // Toggle Function (Touch & Click Safe)
+    function toggleAuthMode(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       isRegisterMode = !isRegisterMode;
       const title = document.getElementById('auth-title');
       const submitBtn = document.getElementById('auth-submit-btn');
@@ -299,7 +312,6 @@
       }
     }
 
-    // Login / Register နှိပ်သည့်အခါ အလုပ်လုပ်သည့် Function
     function handleAuth() {
       const phone = document.getElementById('auth-phone').value;
       const password = document.getElementById('auth-pass').value;
@@ -385,15 +397,4 @@
         .then(r => r.json())
         .then(rows => {
           const list = document.getElementById('tx-history-list');
-          list.innerHTML = '';
-
-          if (rows.length === 0) list.innerHTML = '<p style="color:#9ca3af;">မှတ်တမ်း မရှိသေးပါ။</p>';
-
-          rows.forEach(tx => {
-            const div = document.createElement('div');
-            div.className = 'tx-item';
-
-            let actionArea = '';
-
-            if (tx.status === 'PENDING_ADMIN_NUMBER') {
-              actionArea = `<div st
+          li
