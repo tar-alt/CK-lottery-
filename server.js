@@ -8,7 +8,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Allow receipt base64 image upload
 app.use(express.static(path.join(__dirname, 'public')));
 
 const db = new sqlite3.Database('./lottery.db');
@@ -18,29 +18,28 @@ const ADMIN_CREDENTIALS = {
   password: 'admin123'
 };
 
-// Database Initial Setup
+// Database Initialization
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS history (id INTEGER PRIMARY KEY AUTOINCREMENT, period INTEGER, number INTEGER, bigSmall TEXT, color TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT UNIQUE, password TEXT, balance REAL DEFAULT 0, status TEXT DEFAULT 'ACTIVE')`);
   db.run(`CREATE TABLE IF NOT EXISTS bets (id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT, period INTEGER, selection TEXT, amount REAL, status TEXT DEFAULT 'PENDING', winAmount REAL DEFAULT 0)`);
-  db.run(`CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT, type TEXT, method TEXT, amount REAL, user_pay_phone TEXT, txn_id TEXT, admin_pay_number TEXT, status TEXT DEFAULT 'PENDING_ADMIN_NUMBER', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  db.run(`CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT, type TEXT, method TEXT, amount REAL, user_pay_phone TEXT, txn_id TEXT, receipt_img TEXT, admin_pay_number TEXT, status TEXT DEFAULT 'PENDING_ADMIN_NUMBER', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
 
   db.run(`INSERT OR IGNORE INTO users (phone, password, balance) VALUES (?, ?, 1000000)`, [ADMIN_CREDENTIALS.phone, ADMIN_CREDENTIALS.password]);
 });
 
 let currentPeriod = 202608020001;
 let timeLeft = 60;
-let forcedResults = {}; // Store forced results by period ID: { 202608020001: 9 }
+let forcedResults = {};
 
 db.get("SELECT period FROM history ORDER BY id DESC LIMIT 1", (err, row) => {
   if (!err && row && row.period) currentPeriod = row.period + 1;
 });
 
-// Game Engine Loop
+// Game Cycle Loop
 setInterval(() => {
   timeLeft--;
 
-  // Calculate Realtime Bet Stats for Admin
   db.all("SELECT selection, SUM(amount) as totalAmount FROM bets WHERE period = ? GROUP BY selection", [currentPeriod], (err, rows) => {
     let betSummary = {};
     let grandTotal = 0;
@@ -97,7 +96,7 @@ function settleBets(period, num, bs, color) {
       }
 
       io.emit(`bet_result_${bet.phone}`, {
-        period: period, status: status, amount: bet.amount, winAmount: winAmt, selection: bet.selection
+        period: period, status: status, amount: bet.amount, winAmount: winAmt, selection: bet.selection, winningNum: num, bs: bs, color: color
       });
     });
   });
@@ -114,18 +113,17 @@ app.post('/api/transaction/deposit-request', (req, res) => {
   stmt.finalize();
 });
 
-app.get('/api/transaction/check-status/:id', (req, res) => {
-  db.get("SELECT * FROM transactions WHERE id = ?", [req.params.id], (err, row) => {
-    if (err || !row) return res.status(404).json({ success: false });
-    res.json({ success: true, transaction: row });
+app.get('/api/transaction/user-history/:phone', (req, res) => {
+  db.all("SELECT * FROM transactions WHERE phone = ? ORDER BY id DESC", [req.params.phone], (err, rows) => {
+    res.json(rows || []);
   });
 });
 
-app.post('/api/transaction/deposit-confirm', (req, res) => {
-  const { txId, userPayPhone, txnId } = req.body;
-  db.run("UPDATE transactions SET user_pay_phone = ?, txn_id = ?, status = 'PENDING_APPROVAL' WHERE id = ?", [userPayPhone, txnId, txId], (err) => {
+app.post('/api/transaction/upload-receipt', (req, res) => {
+  const { txId, receiptImg, userPayPhone } = req.body;
+  db.run("UPDATE transactions SET receipt_img = ?, user_pay_phone = ?, status = 'PENDING_APPROVAL' WHERE id = ?", [receiptImg, userPayPhone, txId], (err) => {
     if (err) return res.status(500).json({ success: false });
-    res.json({ success: true, message: 'ငွေသွင်းတောင်းဆိုမှု အတည်ပြုရန် စောင့်ဆိုင်းနေပါသည်' });
+    res.json({ success: true, message: 'ပြေစာ တင်ပြပြီးပါပြီ။ ခွင့်ပြုချက် စောင့်ပါ' });
   });
 });
 
@@ -143,7 +141,7 @@ app.post('/api/transaction/withdraw-request', (req, res) => {
   });
 });
 
-// Admin Transaction APIs
+// Admin Transaction Control
 app.get('/api/admin/pending-transactions', (req, res) => {
   db.all("SELECT * FROM transactions WHERE status != 'APPROVED' AND status != 'REJECTED' ORDER BY id DESC", [], (err, rows) => {
     res.json(rows || []);
@@ -178,13 +176,22 @@ app.post('/api/admin/process-transaction', (req, res) => {
   });
 });
 
+// Admin Result Override
 app.post('/api/admin/set-period-result', (req, res) => {
   const { period, number } = req.body;
   forcedResults[parseInt(period)] = parseInt(number);
-  res.json({ success: true, message: `ပွဲစဉ် [ ${period} ] ထွက်ဂဏန်းကို [ ${number} ] အဖြစ် သတ်မှတ်လိုက်ပါပြီ` });
+  res.json({ success: true, message: `ပွဲစဉ် [ ${period} ] ထွက်ဂဏန်းကို [ ${number} ] ဟု သတ်မှတ်လိုက်ပါပြီ` });
 });
 
-// Admin Auth & User Management APIs
+app.get('/api/admin/upcoming-periods', (req, res) => {
+  let periods = [];
+  for (let i = 0; i < 6; i++) {
+    periods.push(currentPeriod + i);
+  }
+  res.json({ success: true, periods: periods, currentPeriod: currentPeriod });
+});
+
+// Standard User & Admin Auth APIs
 app.post('/api/admin/login', (req, res) => {
   const { phone, password } = req.body;
   if (phone === ADMIN_CREDENTIALS.phone && password === ADMIN_CREDENTIALS.password) {
@@ -197,9 +204,7 @@ app.post('/api/admin/login', (req, res) => {
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 app.get('/api/admin/users', (req, res) => {
-  db.all("SELECT id, phone, balance, status FROM users ORDER BY id DESC", [], (err, rows) => {
-    res.json(rows || []);
-  });
+  db.all("SELECT id, phone, balance, status FROM users ORDER BY id DESC", [], (err, rows) => res.json(rows || []));
 });
 
 app.post('/api/admin/update-balance', (req, res) => {
@@ -212,7 +217,6 @@ app.post('/api/admin/toggle-ban', (req, res) => {
   db.run("UPDATE users SET status = ? WHERE phone = ?", [status, phone], (err) => res.json({ success: !err }));
 });
 
-// User Standard APIs
 app.post('/api/register', (req, res) => {
   const { phone, password } = req.body;
   const stmt = db.prepare("INSERT INTO users (phone, password, balance) VALUES (?, ?, 0)");
@@ -246,7 +250,7 @@ app.post('/api/bet', (req, res) => {
   db.get("SELECT balance FROM users WHERE phone = ?", [phone], (err, row) => {
     if (err || !row || row.balance < amount) return res.status(400).json({ success: false, message: 'လက်ကျန်ငွေ မလုံလောက်ပါ' });
 
-    db.run("UPDATE users SET balance = balance - ? WHERE phone = ?", [amount, phone], (err) => {
+    db.run("UPDATE users SET balance = balance - ? WHERE phone = ?", [amount, phone], () => {
       const stmt = db.prepare("INSERT INTO bets (phone, period, selection, amount) VALUES (?, ?, ?, ?)");
       stmt.run(phone, currentPeriod, selection, amount);
       stmt.finalize();
@@ -256,11 +260,8 @@ app.post('/api/bet', (req, res) => {
 });
 
 app.get('/api/history', (req, res) => {
-  db.all("SELECT period, number, bigSmall, color FROM history ORDER BY id DESC LIMIT 15", [], (err, rows) => {
-    res.json(rows || []);
-  });
+  db.all("SELECT period, number, bigSmall, color FROM history ORDER BY id DESC LIMIT 15", [], (err, rows) => res.json(rows || []));
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
