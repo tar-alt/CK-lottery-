@@ -1,6 +1,6 @@
 {
-  "name": "cklottery-1min-game",
-  "version": "1.0.0",
+  "name": "cklottery-pro-game",
+  "version": "2.0.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
