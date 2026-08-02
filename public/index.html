@@ -9,7 +9,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: #0b0f19; color: #f3f4f6; padding-bottom: 70px; max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
 
-    #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 90%; max-width: 400px; pointer-events: none; }
+    #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; width: 90%; max-width: 400px; pointer-events: none; }
     .toast { background: rgba(30, 41, 59, 0.95); color: #fff; padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 25px rgba(0,0,0,0.5); backdrop-filter: blur(8px); margin-bottom: 10px; }
 
     .header { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #111827; border-bottom: 1px solid #1f2937; }
@@ -42,8 +42,8 @@
     .nav-item { color: #9ca3af; text-align: center; font-size: 11px; font-weight: 600; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .nav-item.active { color: #f97316; }
 
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 200; backdrop-filter: blur(6px); }
-    .modal-content { background: #1f2937; padding: 24px; border-radius: 24px; width: 90%; max-width: 380px; text-align: center; border: 1px solid #374151; }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 500; backdrop-filter: blur(6px); }
+    .modal-content { background: #1f2937; padding: 20px; border-radius: 24px; width: 90%; max-width: 380px; text-align: center; border: 1px solid #374151; }
     .hidden { display: none !important; }
 
     input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #374151; background: #111827; color: white; font-size: 15px; margin: 8px 0; text-align: center; outline: none; }
@@ -52,6 +52,18 @@
     .profile-card { background: #111827; border-radius: 16px; padding: 20px; margin: 16px; border: 1px solid #1f2937; text-align: center; }
     .profile-avatar { width: 64px; height: 64px; background: linear-gradient(135deg, #f97316, #ef4444); border-radius: 50%; margin: 0 auto 12px; display: flex; justify-content: center; align-items: center; font-size: 28px; }
     .profile-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+
+    /* Grand Win Popup Style (Match Screenshot) */
+    .win-modal-card { background: linear-gradient(180deg, #ff7e5f 0%, #feb47b 100%); border-radius: 28px; padding: 24px 16px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.8); position: relative; border: 2px solid #ffeccc; }
+    .win-rocket { font-size: 50px; margin-bottom: -10px; animation: bounce 1s infinite alternate; }
+    .win-title { font-size: 22px; font-weight: 900; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.3); margin-bottom: 12px; }
+    .win-result-badge { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; }
+    .badge { padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; color: white; }
+    .win-ticket { background: #ffffff; color: #111; border-radius: 16px; padding: 16px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); margin-top: 10px; position: relative; }
+    .win-amount { font-size: 28px; font-weight: 900; color: #e11d48; margin-top: 4px; }
+    @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
+
+    .tx-item { background: #111827; padding: 12px; border-radius: 12px; border: 1px solid #1f2937; margin-bottom: 10px; text-align: left; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -64,7 +76,7 @@
       <div class="balance-box">K<span id="balance">0</span></div>
     </div>
 
-    <!-- Game Page -->
+    <!-- Game Tab -->
     <div id="page-game">
       <div class="timer-card">
         <div>
@@ -87,11 +99,12 @@
           <button class="btn-num bg-red btn-press" onclick="openBetModal('2')">2</button>
           <button class="btn-num bg-green btn-press" onclick="openBetModal('3')">3</button>
           <button class="btn-num bg-red btn-press" onclick="openBetModal('4')">4</button>
+
           <button class="btn-num bg-purple btn-press" onclick="openBetModal('5')">5</button>
-          <button class="btn-num bg-red btn-press" onclick="openBetModal('6')">6</button>
-          <button class="btn-num bg-green btn-press" onclick="openBetModal('7')">7</button>
-          <button class="btn-num bg-red btn-press" onclick="openBetModal('8')">8</button>
-          <button class="btn-num bg-green btn-press" onclick="openBetModal('9')">9</button>
+          <button class="btn-num bg-green btn-press" onclick="openBetModal('6')">6</button>
+          <button class="btn-num bg-red btn-press" onclick="openBetModal('7')">7</button>
+          <button class="btn-num bg-green btn-press" onclick="openBetModal('8')">8</button>
+          <button class="btn-num bg-red btn-press" onclick="openBetModal('9')">9</button>
         </div>
 
         <div class="size-grid">
@@ -116,7 +129,7 @@
       </div>
     </div>
 
-    <!-- Profile Page -->
+    <!-- Profile Tab -->
     <div id="page-profile" class="hidden">
       <div class="profile-card">
         <div class="profile-avatar">👤</div>
@@ -129,12 +142,13 @@
         </div>
       </div>
 
-      <div style="padding: 0 16px;">
-        <button class="btn-confirm btn-press" style="background: #374151;" onclick="logout()">အကောင့်မှ ထွက်မည်</button>
+      <div style="padding: 0 16px; margin-top: 10px;">
+        <button class="btn-confirm btn-press" style="background: #1f2937; border: 1px solid #374151;" onclick="openTxHistoryModal()">📜 ငွေသွင်း/ငွေထုတ် မှတ်တမ်း ကြည့်ရန်</button>
+        <button class="btn-confirm btn-press" style="background: #374151; margin-top: 10px;" onclick="logout()">အကောင့်မှ ထွက်မည်</button>
       </div>
     </div>
 
-    <!-- Navigation Bar -->
+    <!-- Navigation -->
     <div class="nav-bar">
       <div class="nav-item active btn-press" id="nav-game" onclick="switchTab('game')">
         <span style="font-size: 18px;">🎰</span>
@@ -147,29 +161,48 @@
     </div>
   </div>
 
-  <!-- Deposit Modal -->
+  <!-- Win Result Modal (Grand Style) -->
+  <div id="win-modal" class="modal hidden">
+    <div class="win-modal-card">
+      <div class="win-rocket">🚀</div>
+      <div class="win-title">သင်အနိုင်ရတဲ့အတွက် ဂုဏ်ယူပါတယ်!</div>
+      
+      <div class="win-result-badge">
+        <span class="badge" id="win-badge-color" style="background:#10b981;">--</span>
+        <span class="badge" style="background:#374151;" id="win-badge-num">--</span>
+        <span class="badge" style="background:#f59e0b;" id="win-badge-bs">--</span>
+      </div>
+
+      <div class="win-ticket">
+        <div style="font-size: 12px; color: #6b7280; font-weight: bold;">ဘောနပ်စ် အနိုင်ငွေ</div>
+        <div class="win-amount">K<span id="win-modal-amount">0</span></div>
+        <div style="font-size: 11px; color: #9ca3af; margin-top: 6px;">ပွဲစဉ်နံပါတ်: Win 1 minute <span id="win-modal-period">--</span></div>
+      </div>
+
+      <button class="btn-confirm btn-press" style="margin-top: 16px; background: #111827;" onclick="closeModal('win-modal')">ပိတ်မည်</button>
+    </div>
+  </div>
+
+  <!-- Deposit Request Modal -->
   <div id="deposit-modal" class="modal hidden">
     <div class="modal-content">
       <h3 style="color: #10b981; margin-bottom: 10px;">ငွေသွင်းမည်</h3>
-      
-      <div id="dep-step-1">
-        <select id="dep-method">
-          <option value="KPay">KPay</option>
-          <option value="WavePay">WavePay</option>
-        </select>
-        <input type="number" id="dep-amount" placeholder="ငွေပမာဏ (ကျပ်)">
-        <button class="btn-confirm btn-press" onclick="submitDepositRequest()">ဆက်လက်လုပ်ဆောင်မည်</button>
-      </div>
-
-      <div id="dep-step-2" class="hidden">
-        <p style="font-size: 13px; color: #9ca3af;">အောက်ပါ နံပါတ်သို့ ငွေလွှဲပေးပါ:</p>
-        <h2 id="admin-pay-number" style="color: #fbbf24; margin: 10px 0;">--</h2>
-        <input type="text" id="dep-user-phone" placeholder="သင့် KPay/Wave ဖုန်းနံပါတ်">
-        <input type="text" id="dep-txn-id" placeholder="လုပ်ငန်းစဉ်နံပါတ် (နောက် ၆ လုံး)">
-        <button class="btn-confirm btn-press" onclick="confirmDepositPayment()">ငွေလွှဲပြီးပါပြီ (Confirm)</button>
-      </div>
-
+      <select id="dep-method">
+        <option value="KPay">KPay</option>
+        <option value="WavePay">WavePay</option>
+      </select>
+      <input type="number" id="dep-amount" placeholder="ငွေပမာဏ (ကျပ်)">
+      <button class="btn-confirm btn-press" onclick="submitDepositRequest()">ဆက်လက်လုပ်ဆောင်မည်</button>
       <button style="margin-top: 12px; background: none; border: none; color: #9ca3af;" class="btn-press" onclick="closeModal('deposit-modal')">ပိတ်မည်</button>
+    </div>
+  </div>
+
+  <!-- Transaction History Modal (With Receipt Upload) -->
+  <div id="tx-history-modal" class="modal hidden">
+    <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+      <h3 style="color: #f59e0b; margin-bottom: 12px;">ငွေသွင်း/ငွေထုတ် မှတ်တမ်း</h3>
+      <div id="tx-history-list"></div>
+      <button style="margin-top: 12px; background: none; border: none; color: #9ca3af;" class="btn-press" onclick="closeModal('tx-history-modal')">ပိတ်မည်</button>
     </div>
   </div>
 
@@ -215,7 +248,6 @@
     const socket = io();
     let currentUser = null;
     let selectedSelection = '';
-    let currentTxId = null;
     let isRegisterMode = false;
 
     function showToast(msg) {
@@ -266,6 +298,20 @@
       document.getElementById('profile-phone').textContent = user.phone;
       document.getElementById('auth-modal').classList.add('hidden');
       document.getElementById('app-content').classList.remove('hidden');
+      
+      socket.on(`bet_result_${user.phone}`, (res) => {
+        if (res.status === 'WIN') {
+          document.getElementById('win-modal-amount').textContent = res.winAmount.toLocaleString();
+          document.getElementById('win-modal-period').textContent = res.period;
+          document.getElementById('win-badge-color').textContent = res.color;
+          document.getElementById('win-badge-num').textContent = res.winningNum;
+          document.getElementById('win-badge-bs').textContent = res.bs;
+          document.getElementById('win-modal').classList.remove('hidden');
+        } else {
+          showToast(`ပွဲစဉ် [${res.period}] တွင် မကံကောင်းသေးပါ`);
+        }
+      });
+
       loadHistory();
     }
 
@@ -276,8 +322,6 @@
     }
 
     function openDepositModal() {
-      document.getElementById('dep-step-1').classList.remove('hidden');
-      document.getElementById('dep-step-2').classList.add('hidden');
       document.getElementById('deposit-modal').classList.remove('hidden');
     }
 
@@ -294,118 +338,40 @@
       .then(r => r.json())
       .then(data => {
         if (data.success) {
-          currentTxId = data.txId;
-          showToast("Admin ဖုန်းနံပါတ် ပို့ပေးသည်အထိ ခဏစောင့်ပါ...");
-          pollAdminDepositNumber();
+          showToast("ငွေသွင်းတောင်းဆိုလိုက်ပါပြီ။ မှတ်တမ်းတွင် ခဏစောင့်ပါ");
+          closeModal('deposit-modal');
+          openTxHistoryModal();
         }
       });
     }
 
-    function pollAdminDepositNumber() {
-      const interval = setInterval(() => {
-        fetch(`/api/transaction/check-status/${currentTxId}`)
-          .then(r => r.json())
-          .then(data => {
-            if (data.success && data.transaction.status === 'WAITING_USER_PAY') {
-              clearInterval(interval);
-              document.getElementById('admin-pay-number').textContent = data.transaction.admin_pay_number;
-              document.getElementById('dep-step-1').classList.add('hidden');
-              document.getElementById('dep-step-2').classList.remove('hidden');
-            }
-          });
-      }, 2000);
-    }
+    function openTxHistoryModal() {
+      fetch(`/api/transaction/user-history/${currentUser.phone}`)
+        .then(r => r.json())
+        .then(rows => {
+          const list = document.getElementById('tx-history-list');
+          list.innerHTML = '';
 
-    function confirmDepositPayment() {
-      const userPayPhone = document.getElementById('dep-user-phone').value;
-      const txnId = document.getElementById('dep-txn-id').value;
+          if (rows.length === 0) list.innerHTML = '<p style="color:#9ca3af;">မှတ်တမ်း မရှိသေးပါ။</p>';
 
-      fetch('/api/transaction/deposit-confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ txId: currentTxId, userPayPhone, txnId })
-      })
-      .then(r => r.json())
-      .then(data => {
-        showToast(data.message);
-        closeModal('deposit-modal');
-      });
-    }
+          rows.forEach(tx => {
+            const div = document.createElement('div');
+            div.className = 'tx-item';
 
-    function openWithdrawModal() { document.getElementById('withdraw-modal').classList.remove('hidden'); }
+            let actionArea = '';
 
-    function submitWithdraw() {
-      const method = document.getElementById('wd-method').value;
-      const userPayPhone = document.getElementById('wd-user-phone').value;
-      const amount = parseFloat(document.getElementById('wd-amount').value);
-
-      fetch('/api/transaction/withdraw-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: currentUser.phone, method, amount, userPayPhone })
-      })
-      .then(r => r.json())
-      .then(data => {
-        showToast(data.message);
-        if (data.success) closeModal('withdraw-modal');
-      });
-    }
-
-    function openBetModal(sel) {
-      selectedSelection = sel;
-      document.getElementById('bet-title').textContent = `လောင်းမည်: [ ${sel} ]`;
-      document.getElementById('bet-modal').classList.remove('hidden');
-    }
-
-    function submitBet() {
-      const amt = parseFloat(document.getElementById('bet-amount').value);
-      fetch('/api/bet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: currentUser.phone, selection: selectedSelection, amount: amt })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          updateBalanceDisplay(data.newBalance);
-          showToast("လောင်းကြေး တင်ပြီးပါပြီ");
-          closeModal('bet-modal');
-        } else showToast(data.message);
-      });
-    }
-
-    function loadHistory() {
-      fetch('/api/history').then(r => r.json()).then(rows => {
-        const tbody = document.getElementById('history-rows');
-        tbody.innerHTML = '';
-        rows.forEach(r => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${r.period}</td><td><b>${r.number}</b></td><td>${r.bigSmall}</td><td>${r.color}</td>`;
-          tbody.appendChild(tr);
-        });
-      });
-    }
-
-    function switchTab(tab) {
-      document.getElementById('page-game').classList.toggle('hidden', tab !== 'game');
-      document.getElementById('page-profile').classList.toggle('hidden', tab !== 'profile');
-    }
-
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-    function logout() { localStorage.removeItem('user_phone'); location.reload(); }
-
-    socket.on('timer_tick', (data) => {
-      document.getElementById('period-text').textContent = data.period;
-      document.getElementById('timer-display').textContent = `00:${data.timeLeft < 10 ? '0' + data.timeLeft : data.timeLeft}`;
-    });
-
-    socket.on('new_game_result', () => {
-      loadHistory();
-      if (currentUser) fetch(`/api/user/${currentUser.phone}`).then(r => r.json()).then(d => updateBalanceDisplay(d.user.balance));
-    });
-
-    checkAutoLogin();
-  </script>
-</body>
-</html>
-
+            if (tx.status === 'PENDING_ADMIN_NUMBER') {
+              actionArea = `<div style="color:#fbbf24; margin-top:4px;">⏳ Admin ဖုန်းနံပါတ် ပို့ပေးသည်အထိ ခဏစောင့်ပါ...</div>`;
+            } else if (tx.status === 'WAITING_USER_PAY') {
+              actionArea = `
+                <div style="background:#1e293b; padding:8px; border-radius:8px; margin:6px 0;">
+                  <div style="color:#10b981; font-weight:bold;">လွှဲရမည့်နံပါတ်: ${tx.admin_pay_number}</div>
+                  <input type="text" id="pay-phone-${tx.id}" placeholder="သင့်ဖုန်းနံပါတ်" style="margin-top:6px;">
+                  <input type="file" id="receipt-file-${tx.id}" accept="image/*" style="margin-top:4px;">
+                  <button class="btn-confirm btn-press" style="padding:8px; font-size:13px;" onclick="uploadReceipt(${tx.id})">ပြေစာတင်မည် (Confirm)</button>
+                </div>
+              `;
+            } else if (tx.status === 'PENDING_APPROVAL') {
+              actionArea = `<div style="color:#38bdf8; margin-top:4px;">⏳ Admin ခွင့်ပြုချက် စောင့်ဆိုင်းနေပါသည်...</div>`;
+            } else if (tx.status === 'APPROVED') {
+              actionArea = `<div style="color:#10b981; font-weight:bold; margin-top:
