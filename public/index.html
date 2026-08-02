@@ -309,118 +309,282 @@
 
     function loadPendingTransactions() {
       fetch('/api/admin/pending-transactions').then(r => r.json()).then(rows => {
-        const tbody = document.getElementById('tx-rows');
-        tbody.innerHTML = '';
-        rows.forEach(tx => {
-          const tr = document.createElement('tr');
-          let actionCell = '';
+        
+  <script>
+    const socket = io();
+    let currentUser = null;
+    let selectedSelection = '';
+    let isRegisterMode = false;
 
-          if (tx.status === 'PENDING_ADMIN_NUMBER') {
-            actionCell = `
-              <input type="number" id="admin-num-${tx.id}" placeholder="ငွေလက်ခံမည့်ဖုန်း" style="width:140px; margin-bottom:4px;">
-              <button class="btn-success" onclick="sendDepositNumber(${tx.id})">နံပါတ် ပို့မည်</button>
-            `;
-          } else if (tx.status === 'PENDING_APPROVAL') {
-            let imgHtml = tx.receipt_img ? `<br><a href="${tx.receipt_img}" target="_blank"><img src="${tx.receipt_img}" class="receipt-preview"></a>` : '';
-            actionCell = `
-              <div style="font-size:11px;">လွှဲဖုန်း: ${tx.user_pay_phone || '-'} ${imgHtml}</div>
-              <div style="margin-top:6px;">
-                <button class="btn-success" onclick="processTx(${tx.id}, 'APPROVE')">ခွင့်ပြုမည်</button>
-                <button class="btn-danger" onclick="processTx(${tx.id}, 'REJECT')">ငြင်းပယ်မည်</button>
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerText = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function checkAutoLogin() {
+      const savedPhone = localStorage.getItem('user_phone');
+      if (savedPhone) {
+        fetch(`/api/user/${savedPhone}`)
+          .then(res => res.json())
+          .then(data => { if (data.success) loginSuccess(data.user); });
+      }
+    }
+
+    // Register / Login ပြောင်းလဲသည့် Function
+    function toggleAuthMode() {
+      isRegisterMode = !isRegisterMode;
+      const title = document.getElementById('auth-title');
+      const submitBtn = document.getElementById('auth-submit-btn');
+
+      if (isRegisterMode) {
+        title.textContent = "အကောင့်အသစ်ဖွင့်မည်";
+        submitBtn.textContent = "Register ပြုလုပ်မည်";
+      } else {
+        title.textContent = "Login ဝင်မည်";
+        submitBtn.textContent = "Login ဝင်မည်";
+      }
+    }
+
+    // Login / Register နှိပ်သည့်အခါ အလုပ်လုပ်သည့် Function
+    function handleAuth() {
+      const phone = document.getElementById('auth-phone').value;
+      const password = document.getElementById('auth-pass').value;
+      if (!phone || !password) return showToast("ဖုန်းနံပါတ်နှင့် စကားဝှက် ဖြည့်သွင်းပါ");
+
+      const endpoint = isRegisterMode ? '/api/register' : '/api/login';
+
+      fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast(isRegisterMode ? "အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်" : "Login ဝင်ရောက်ပြီးပါပြီ");
+          loginSuccess(data.user);
+        } else {
+          showToast(data.message || "မှားယွင်းနေပါသည်။ ပြန်လည်ကြိုးစားပါ");
+        }
+      })
+      .catch(err => {
+        showToast("Server နှင့် ချိတ်ဆက်၍ မရပါ");
+      });
+    }
+
+    function loginSuccess(user) {
+      currentUser = user;
+      localStorage.setItem('user_phone', user.phone);
+      updateBalanceDisplay(user.balance);
+      document.getElementById('profile-phone').textContent = user.phone;
+      document.getElementById('auth-modal').classList.add('hidden');
+      document.getElementById('app-content').classList.remove('hidden');
+      
+      socket.on(`bet_result_${user.phone}`, (res) => {
+        if (res.status === 'WIN') {
+          document.getElementById('win-modal-amount').textContent = res.winAmount.toLocaleString();
+          document.getElementById('win-modal-period').textContent = res.period;
+          document.getElementById('win-badge-color').textContent = res.color;
+          document.getElementById('win-badge-num').textContent = res.winningNum;
+          document.getElementById('win-badge-bs').textContent = res.bs;
+          document.getElementById('win-modal').classList.remove('hidden');
+        } else {
+          showToast(`ပွဲစဉ် [${res.period}] တွင် မကံကောင်းသေးပါ`);
+        }
+      });
+
+      loadHistory();
+    }
+
+    function updateBalanceDisplay(bal) {
+      currentUser.balance = bal;
+      document.getElementById('balance').textContent = bal.toLocaleString();
+      document.getElementById('profile-balance').textContent = bal.toLocaleString();
+    }
+
+    function openDepositModal() {
+      document.getElementById('deposit-modal').classList.remove('hidden');
+    }
+
+    function submitDepositRequest() {
+      const method = document.getElementById('dep-method').value;
+      const amount = parseFloat(document.getElementById('dep-amount').value);
+      if (!amount || amount <= 0) return showToast("ပမာဏ မှားယွင်းနေသည်");
+
+      fetch('/api/transaction/deposit-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: currentUser.phone, method, amount })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          showToast("ငွေသွင်းတောင်းဆိုလိုက်ပါပြီ။ မှတ်တမ်းတွင် ခဏစောင့်ပါ");
+          closeModal('deposit-modal');
+          openTxHistoryModal();
+        }
+      });
+    }
+
+    function openTxHistoryModal() {
+      fetch(`/api/transaction/user-history/${currentUser.phone}`)
+        .then(r => r.json())
+        .then(rows => {
+          const list = document.getElementById('tx-history-list');
+          list.innerHTML = '';
+
+          if (rows.length === 0) list.innerHTML = '<p style="color:#9ca3af;">မှတ်တမ်း မရှိသေးပါ။</p>';
+
+          rows.forEach(tx => {
+            const div = document.createElement('div');
+            div.className = 'tx-item';
+
+            let actionArea = '';
+
+            if (tx.status === 'PENDING_ADMIN_NUMBER') {
+              actionArea = `<div style="color:#fbbf24; margin-top:4px;">⏳ Admin ဖုန်းနံပါတ် ပို့ပေးသည်အထိ ခဏစောင့်ပါ...</div>`;
+            } else if (tx.status === 'WAITING_USER_PAY') {
+              actionArea = `
+                <div style="background:#1e293b; padding:8px; border-radius:8px; margin:6px 0;">
+                  <div style="color:#10b981; font-weight:bold;">လွှဲရမည့်နံပါတ်: ${tx.admin_pay_number}</div>
+                  <input type="text" id="pay-phone-${tx.id}" placeholder="သင့်ဖုန်းနံပါတ်" style="margin-top:6px;">
+                  <input type="file" id="receipt-file-${tx.id}" accept="image/*" style="margin-top:4px;">
+                  <button class="btn-confirm btn-press" style="padding:8px; font-size:13px;" onclick="uploadReceipt(${tx.id})">ပြေစာတင်မည် (Confirm)</button>
+                </div>
+              `;
+            } else if (tx.status === 'PENDING_APPROVAL') {
+              actionArea = `<div style="color:#38bdf8; margin-top:4px;">⏳ Admin ခွင့်ပြုချက် စောင့်ဆိုင်းနေပါသည်...</div>`;
+            } else if (tx.status === 'APPROVED') {
+              actionArea = `<div style="color:#10b981; font-weight:bold; margin-top:4px;">✅ အောင်မြင်ပါသည်</div>`;
+            } else {
+              actionArea = `<div style="color:#ef4444; font-weight:bold; margin-top:4px;">❌ ငြင်းပယ်ခံရသည်</div>`;
+            }
+
+            div.innerHTML = `
+              <div style="display:flex; justify-content:space-between;">
+                <b>${tx.type} (${tx.method})</b>
+                <span style="color:#fbbf24; font-weight:bold;">K${tx.amount.toLocaleString()}</span>
               </div>
+              ${actionArea}
             `;
-          } else {
-            actionCell = `<span style="color:#fbbf24;">User ငွေလွှဲပြေစာ တင်သည်ကို စောင့်နေသည်</span>`;
-          }
+            list.appendChild(div);
+          });
 
-          tr.innerHTML = `
-            <td><b style="color:${tx.type === 'Deposit' ? '#10b981' : '#ef4444'}">${tx.type}</b></td>
-            <td>${tx.phone}</td>
-            <td><b>K${tx.amount.toLocaleString()}</b></td>
-            <td>${tx.method}</td>
-            <td>${actionCell}</td>
-          `;
-          tbody.appendChild(tr);
+          document.getElementById('tx-history-modal').classList.remove('hidden');
         });
+    }
+
+    function uploadReceipt(txId) {
+      const userPayPhone = document.getElementById(`pay-phone-${txId}`).value;
+      const fileInput = document.getElementById(`receipt-file-${txId}`);
+
+      if (!fileInput.files || fileInput.files.length === 0) return showToast("ပြေစာ ပုံ ထည့်သွင်းပေးပါ");
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Image = e.target.result;
+        fetch('/api/transaction/upload-receipt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ txId, receiptImg: base64Image, userPayPhone })
+        })
+        .then(r => r.json())
+        .then(d => {
+          showToast(d.message);
+          openTxHistoryModal();
+        });
+      };
+      reader.readAsDataURL(fileInput.files[0]);
+    }
+
+    function openWithdrawModal() { document.getElementById('withdraw-modal').classList.remove('hidden'); }
+
+    function submitWithdraw() {
+      const method = document.getElementById('wd-method').value;
+      const userPayPhone = document.getElementById('wd-user-phone').value;
+      const amount = parseFloat(document.getElementById('wd-amount').value);
+
+      fetch('/api/transaction/withdraw-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: currentUser.phone, method, amount, userPayPhone })
+      })
+      .then(r => r.json())
+      .then(data => {
+        showToast(data.message);
+        if (data.success) closeModal('withdraw-modal');
       });
     }
 
-    function sendDepositNumber(txId) {
-      const adminPayNumber = document.getElementById(`admin-num-${txId}`).value;
-      if (!adminPayNumber) return alert("ဖုန်းနံပါတ် ဖြည့်သွင်းပါ");
-
-      fetch('/api/admin/set-deposit-number', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ txId, adminPayNumber })
-      }).then(() => loadPendingTransactions());
+    function openBetModal(sel) {
+      selectedSelection = sel;
+      document.getElementById('bet-title').textContent = `လောင်းမည်: [ ${sel} ]`;
+      document.getElementById('bet-modal').classList.remove('hidden');
     }
 
-    function processTx(txId, action) {
-      fetch('/api/admin/process-transaction', {
+    function submitBet() {
+      const amt = parseFloat(document.getElementById('bet-amount').value);
+      fetch('/api/bet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ txId, action })
-      }).then(() => {
-        loadPendingTransactions();
-        loadUsers();
+        body: JSON.stringify({ phone: currentUser.phone, selection: selectedSelection, amount: amt })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          updateBalanceDisplay(data.newBalance);
+          showToast("လောင်းကြေး တင်ပြီးပါပြီ");
+          closeModal('bet-modal');
+        } else showToast(data.message);
       });
     }
 
-    function loadUsers() {
-      fetch('/api/admin/users').then(r => r.json()).then(users => {
-        const tbody = document.getElementById('user-rows');
+    function loadHistory() {
+      fetch('/api/history').then(r => r.json()).then(rows => {
+        const tbody = document.getElementById('history-rows');
         tbody.innerHTML = '';
-        users.forEach(u => {
+        rows.forEach(r => {
           const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td><b>${u.phone}</b></td>
-            <td><input type="number" value="${u.balance}" id="bal-${u.phone}" style="width:100px;"> <button onclick="updateBalance('${u.phone}')">Save</button></td>
-            <td><span style="color:${u.status === 'BANNED' ? '#ef4444' : '#10b981'}; font-weight:bold;">${u.status}</span></td>
-            <td><button class="${u.status === 'BANNED' ? 'btn-success' : 'btn-danger'}" onclick="toggleBan('${u.phone}', '${u.status}')">${u.status === 'BANNED' ? 'Unban' : 'Ban'}</button></td>
-          `;
+          tr.innerHTML = `<td>${r.period}</td><td><b>${r.number}</b></td><td>${r.bigSmall}</td><td>${r.color}</td>`;
           tbody.appendChild(tr);
         });
       });
     }
 
-    function updateBalance(phone) {
-      const bal = parseFloat(document.getElementById(`bal-${phone}`).value);
-      fetch('/api/admin/update-balance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, balance: bal })
-      }).then(() => loadUsers());
+    function switchTab(tab) {
+      document.getElementById('page-game').classList.toggle('hidden', tab !== 'game');
+      document.getElementById('page-profile').classList.toggle('hidden', tab !== 'profile');
+      
+      const navGame = document.getElementById('nav-game');
+      const navProfile = document.getElementById('nav-profile');
+      
+      if (tab === 'game') {
+        navGame.classList.add('active');
+        navProfile.classList.remove('active');
+      } else {
+        navProfile.classList.add('active');
+        navGame.classList.remove('active');
+      }
     }
 
-    function toggleBan(phone, currentStatus) {
-      fetch('/api/admin/toggle-ban', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, status: currentStatus === 'BANNED' ? 'ACTIVE' : 'BANNED' })
-      }).then(() => loadUsers());
-    }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function logout() { localStorage.removeItem('user_phone'); location.reload(); }
 
     socket.on('timer_tick', (data) => {
-      document.getElementById('current-period-text').textContent = data.period;
-      document.getElementById('current-time-text').textContent = data.timeLeft;
-      document.getElementById('grand-total-text').textContent = data.grandTotal ? data.grandTotal.toLocaleString() : 0;
-
-      let summaryHtml = '';
-      if (data.betSummary) {
-        for (const [key, val] of Object.entries(data.betSummary)) {
-          summaryHtml += `<span style="margin-right:12px;">[${key}]: <b>K${val.toLocaleString()}</b></span>`;
-        }
-      }
-      document.getElementById('top-bets-list').innerHTML = summaryHtml || 'လောင်းကြေး မရှိသေးပါ။';
+      document.getElementById('period-text').textContent = data.period;
+      document.getElementById('timer-display').textContent = `00:${data.timeLeft < 10 ? '0' + data.timeLeft : data.timeLeft}`;
     });
 
     socket.on('new_game_result', () => {
-      loadUpcomingPeriods();
+      loadHistory();
+      if (currentUser) fetch(`/api/user/${currentUser.phone}`).then(r => r.json()).then(d => updateBalanceDisplay(d.user.balance));
     });
 
-    setInterval(loadPendingTransactions, 4000);
-    checkAdminSession();
+    checkAutoLogin();
   </script>
 </body>
 </html>
