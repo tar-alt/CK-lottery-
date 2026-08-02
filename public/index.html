@@ -17,14 +17,17 @@
     .btn-withdraw { background-color: #ef4444; }
     .balance-box { background-color: #1e293b; padding: 8px 14px; border-radius: 20px; font-weight: bold; color: #f59e0b; border: 1px solid #334155; }
 
-    .timer-card { background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .timer-card { background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: relative; }
     .timer-display { background-color: #000; font-size: 28px; font-weight: bold; padding: 6px 16px; border-radius: 12px; font-family: monospace; }
+    .lock-banner { display: none; position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%); background: #ef4444; color: white; font-size: 11px; padding: 2px 10px; border-radius: 10px; font-weight: bold; }
 
     .bet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
     .num-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
     .size-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
 
-    .btn-color, .btn-num, .btn-size { border: none; padding: 14px 8px; border-radius: 12px; font-weight: bold; color: white; font-size: 16px; cursor: pointer; text-align: center; }
+    .btn-color, .btn-num, .btn-size { border: none; padding: 14px 8px; border-radius: 12px; font-weight: bold; color: white; font-size: 16px; cursor: pointer; text-align: center; transition: 0.2s; }
+    .btn-color:disabled, .btn-num:disabled, .btn-size:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(80%); }
+    
     .bg-green { background-color: #10b981; }
     .bg-purple { background-color: #a855f7; }
     .bg-red { background-color: #ef4444; }
@@ -71,6 +74,7 @@
       <div id="period-text" style="font-size: 14px; font-weight: bold; margin-top: 4px;">--</div>
     </div>
     <div class="timer-display" id="timer-display">00:60</div>
+    <div id="lock-banner" class="lock-banner">လောင်းကြေးပိတ်ပါပြီ</div>
   </div>
 
   <!-- Bet Tracker -->
@@ -81,29 +85,29 @@
 
   <!-- Colors -->
   <div class="bet-grid">
-    <button class="btn-color bg-green" onclick="openBetModal('အစိမ်း')">အစိမ်း</button>
-    <button class="btn-color bg-purple" onclick="openBetModal('ခရမ်း')">ခရမ်း</button>
-    <button class="btn-color bg-red" onclick="openBetModal('အနီ')">အနီ</button>
+    <button class="btn-color bg-green bet-btn" onclick="openBetModal('အစိမ်း')">အစိမ်း</button>
+    <button class="btn-color bg-purple bet-btn" onclick="openBetModal('ခရမ်း')">ခရမ်း</button>
+    <button class="btn-color bg-red bet-btn" onclick="openBetModal('အနီ')">အနီ</button>
   </div>
 
   <!-- Numbers -->
   <div class="num-grid">
-    <button class="btn-num bg-purple" onclick="openBetModal('0')">0</button>
-    <button class="btn-num bg-green" onclick="openBetModal('1')">1</button>
-    <button class="btn-num bg-red" onclick="openBetModal('2')">2</button>
-    <button class="btn-num bg-green" onclick="openBetModal('3')">3</button>
-    <button class="btn-num bg-red" onclick="openBetModal('4')">4</button>
-    <button class="btn-num bg-purple" onclick="openBetModal('5')">5</button>
-    <button class="btn-num bg-red" onclick="openBetModal('6')">6</button>
-    <button class="btn-num bg-green" onclick="openBetModal('7')">7</button>
-    <button class="btn-num bg-red" onclick="openBetModal('8')">8</button>
-    <button class="btn-num bg-green" onclick="openBetModal('9')">9</button>
+    <button class="btn-num bg-purple bet-btn" onclick="openBetModal('0')">0</button>
+    <button class="btn-num bg-green bet-btn" onclick="openBetModal('1')">1</button>
+    <button class="btn-num bg-red bet-btn" onclick="openBetModal('2')">2</button>
+    <button class="btn-num bg-green bet-btn" onclick="openBetModal('3')">3</button>
+    <button class="btn-num bg-red bet-btn" onclick="openBetModal('4')">4</button>
+    <button class="btn-num bg-purple bet-btn" onclick="openBetModal('5')">5</button>
+    <button class="btn-num bg-red bet-btn" onclick="openBetModal('6')">6</button>
+    <button class="btn-num bg-green bet-btn" onclick="openBetModal('7')">7</button>
+    <button class="btn-num bg-red bet-btn" onclick="openBetModal('8')">8</button>
+    <button class="btn-num bg-green bet-btn" onclick="openBetModal('9')">9</button>
   </div>
 
   <!-- Big/Small -->
   <div class="size-grid">
-    <button class="btn-size bg-orange" onclick="openBetModal('အကြီး')">အကြီး (5-9)</button>
-    <button class="btn-size bg-blue" onclick="openBetModal('အသေး')">အသေး (0-4)</button>
+    <button class="btn-size bg-orange bet-btn" onclick="openBetModal('အကြီး')">အကြီး (5-9)</button>
+    <button class="btn-size bg-blue bet-btn" onclick="openBetModal('အသေး')">အသေး (0-4)</button>
   </div>
 
   <!-- History Table -->
@@ -118,9 +122,7 @@
           <th>အရောင်</th>
         </tr>
       </thead>
-      <tbody id="history-rows">
-        <!-- Rows injected via JS -->
-      </tbody>
+      <tbody id="history-rows"></tbody>
     </table>
   </div>
 
@@ -158,17 +160,16 @@
   <script>
     const socket = io();
 
-    // Balance စစ်ဆေးခြင်း (0 သို့မဟုတ် NaN ဖြစ်နေလျှင် 10000 ပြန်ထားပေးခြင်း)
+    // 1. Balance ကို LocalStorage တွင် အတည်မှတ်ထားခြင်း (Refresh သည့်အခါ 10000 ပြန်မဖြစ်တော့ပါ)
     let savedBal = localStorage.getItem('user_balance');
-    let userBalance = (savedBal !== null && !isNaN(parseFloat(savedBal)) && parseFloat(savedBal) > 0) 
+    let userBalance = (savedBal !== null && !isNaN(parseFloat(savedBal))) 
       ? parseFloat(savedBal) 
       : 10000;
 
     function updateBalance(newBal) {
       userBalance = Math.max(0, newBal);
       localStorage.setItem('user_balance', userBalance);
-      const el = document.getElementById('balance');
-      if (el) el.textContent = userBalance.toLocaleString();
+      document.getElementById('balance').textContent = userBalance.toLocaleString();
     }
 
     updateBalance(userBalance);
@@ -176,20 +177,54 @@
     let selectedSelection = null;
     let activeBet = null;
     let currentPeriod = '';
+    let isLocked = false;
+
+    // 2. Refresh လုပ်လျှင်လည်း လောင်းထားသော အချက်အလက်များ မပျောက်စေရန် LocalStorage မှ ပြန်ခေါ်ခြင်း
+    function restoreActiveBet() {
+      const savedBet = localStorage.getItem('active_bet');
+      if (savedBet) {
+        activeBet = JSON.parse(savedBet);
+        document.getElementById('tracked-selection').textContent = activeBet.selection;
+        document.getElementById('tracked-amount').textContent = activeBet.amount.toLocaleString();
+        document.getElementById('bet-tracker').classList.remove('hidden');
+      }
+    }
+    restoreActiveBet();
 
     socket.on('timer_tick', (data) => {
       currentPeriod = data.period;
-      const pEl = document.getElementById('period-text');
-      if (pEl) pEl.textContent = data.period;
+      document.getElementById('period-text').textContent = data.period;
       
-      const s = data.timeLeft < 10 ? '0' + data.timeLeft : data.timeLeft;
-      const tEl = document.getElementById('timer-display');
-      if (tEl) tEl.textContent = `00:${s}`;
+      const timeLeft = data.timeLeft;
+      const s = timeLeft < 10 ? '0' + timeLeft : timeLeft;
+      document.getElementById('timer-display').textContent = `00:${s}`;
+
+      // 3. နောက်ဆုံး ၁၀ စက္ကန့်တွင် လောင်းကြေး ပိတ်ခြင်း (Disable buttons & Close Modal)
+      if (timeLeft <= 10) {
+        if (!isLocked) {
+          isLocked = true;
+          toggleBetButtons(true);
+          closeModal('bet-modal'); // တကယ်လို့ Modal ပွင့်နေရင် ပိတ်လိုက်မည်
+          document.getElementById('lock-banner').style.display = 'block';
+        }
+      } else {
+        if (isLocked) {
+          isLocked = false;
+          toggleBetButtons(false);
+          document.getElementById('lock-banner').style.display = 'none';
+        }
+      }
     });
+
+    function toggleBetButtons(disabled) {
+      const buttons = document.querySelectorAll('.bet-btn');
+      buttons.forEach(btn => btn.disabled = disabled);
+    }
 
     socket.on('new_game_result', (data) => {
       addHistoryRow(data.period, data.number, data.bigSmall, data.color);
 
+      // ပွဲစဉ်တူပါက နိုင်/ရှုံး တွက်ချက်ခြင်း
       if (activeBet && String(activeBet.period) === String(data.period)) {
         let isWin = false;
 
@@ -207,9 +242,10 @@
 
         showResultPopup(isWin, data.number);
 
+        // လောင်းထားတာ ပိုင်နိုင်စွာ ပို့ပြီးလျှင် Clear လုပ်မည်
         activeBet = null;
-        const tracker = document.getElementById('bet-tracker');
-        if (tracker) tracker.classList.add('hidden');
+        localStorage.removeItem('active_bet');
+        document.getElementById('bet-tracker').classList.add('hidden');
       }
     });
 
@@ -218,8 +254,6 @@
       const bg = document.getElementById('result-card-bg');
       const status = document.getElementById('result-status-text');
       const detail = document.getElementById('result-detail-text');
-
-      if (!modal || !bg || !status || !detail) return;
 
       if (isWin) {
         bg.className = "result-card result-win";
@@ -233,14 +267,18 @@
     }
 
     function openBetModal(selection) {
+      if (isLocked) return alert("ပွဲစဉ်ပြီးခါနီး ၁၀ စက္ကန့်အတွင်း လောင်း၍မရပါ");
       selectedSelection = selection;
-      const title = document.getElementById('bet-title');
-      if (title) title.textContent = `လောင်းမည်: [ ${selection} ]`;
-      const modal = document.getElementById('bet-modal');
-      if (modal) modal.classList.remove('hidden');
+      document.getElementById('bet-title').textContent = `လောင်းမည်: [ ${selection} ]`;
+      document.getElementById('bet-modal').classList.remove('hidden');
     }
 
     function submitBet() {
+      if (isLocked) {
+        closeModal('bet-modal');
+        return alert("အချိန်စေ့သွားပါပြီ! လောင်း၍မရတော့ပါ");
+      }
+
       const amtInput = document.getElementById('bet-amount');
       const amt = amtInput ? parseFloat(amtInput.value) : 0;
       
@@ -251,13 +289,12 @@
 
       activeBet = { period: currentPeriod, selection: selectedSelection, amount: amt };
       
-      const selEl = document.getElementById('tracked-selection');
-      const amtEl = document.getElementById('tracked-amount');
-      if (selEl) selEl.textContent = selectedSelection;
-      if (amtEl) amtEl.textContent = amt.toLocaleString();
-      
-      const tracker = document.getElementById('bet-tracker');
-      if (tracker) tracker.classList.remove('hidden');
+      // LocalStorage တွင် active_bet ကိုပါ သိမ်းဆည်းထားမည်
+      localStorage.setItem('active_bet', JSON.stringify(activeBet));
+
+      document.getElementById('tracked-selection').textContent = selectedSelection;
+      document.getElementById('tracked-amount').textContent = amt.toLocaleString();
+      document.getElementById('bet-tracker').classList.remove('hidden');
 
       fetch('/api/bet', {
         method: 'POST',
@@ -269,10 +306,8 @@
     }
 
     function openTxModal(type) {
-      const title = document.getElementById('tx-title');
-      if (title) title.textContent = type === 'Deposit' ? 'ငွေသွင်းမည်' : 'ငွေထုတ်မည်';
-      const modal = document.getElementById('tx-modal');
-      if (modal) modal.classList.remove('hidden');
+      document.getElementById('tx-title').textContent = type === 'Deposit' ? 'ငွေသွင်းမည်' : 'ငွေထုတ်မည်';
+      document.getElementById('tx-modal').classList.remove('hidden');
     }
 
     function submitTx() {
