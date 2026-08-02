@@ -115,10 +115,9 @@ app.post('/api/admin/set-next-number', (req, res) => {
   res.json({ success: true, message: `နောက်တစ်ကြိမ်ထွက်ဂဏန်းကို [ ${forcedResultNumber} ] အဖြစ် သတ်မှတ်လိုက်ပါပြီ` });
 });
 
-app.get('/api/admin/transactions', (req, res) => {
-  db.all(`SELECT * FROM transactions WHERE status = 'PENDING' ORDER BY id DESC`, [], (err, rows) => {
-    res.json(rows || []);
-  });
+// Admin Page လင့်ခ်အတွက် Route
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 app.post('/api/transaction', (req, res) => {
