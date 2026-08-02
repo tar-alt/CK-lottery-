@@ -3,69 +3,399 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
   <title>CK VIP Lottery</title>
+
   <script src="/socket.io/socket.io.js"></script>
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background-color: #0b0f19; color: #f3f4f6; padding-bottom: 70px; max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-    #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; width: 90%; max-width: 400px; pointer-events: none; }
-    .toast { background: rgba(30, 41, 59, 0.95); color: #fff; padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 25px rgba(0,0,0,0.5); backdrop-filter: blur(8px); margin-bottom: 10px; }
+    body {
+      background-color: #0b0f19;
+      color: #f3f4f6;
+      padding-bottom: 70px;
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
+    }
 
-    .header { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #111827; border-bottom: 1px solid #1f2937; }
-    .logo { font-size: 18px; font-weight: 800; color: #f97316; }
-    .balance-box { background: linear-gradient(135deg, #1e293b, #0f172a); padding: 6px 14px; border-radius: 20px; font-weight: 700; color: #fbbf24; border: 1px solid #374151; }
+    button {
+      -webkit-appearance: none;
+      appearance: none;
+      touch-action: manipulation;
+    }
 
-    .btn-press { transition: transform 0.08s ease; cursor: pointer; border: none; outline: none; }
-    .btn-press:active { transform: scale(0.92); }
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      width: 90%;
+      max-width: 400px;
+      pointer-events: none;
+    }
 
-    .timer-card { background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 18px; padding: 16px; margin: 16px; display: flex; justify-content: space-between; align-items: center; }
-    .timer-display { background: #000; font-size: 26px; font-weight: 900; padding: 6px 16px; border-radius: 10px; color: #38bdf8; font-family: monospace; }
+    .toast {
+      background: rgba(30, 41, 59, 0.95);
+      color: #fff;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+      margin-bottom: 10px;
+    }
 
-    .bet-container { padding: 0 16px; }
-    .bet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
-    .num-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
-    .size-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background: #111827;
+      border-bottom: 1px solid #1f2937;
+    }
 
-    .btn-color, .btn-num, .btn-size { padding: 14px 8px; border-radius: 14px; font-weight: 800; color: white; font-size: 15px; text-align: center; }
-    .bg-green { background: linear-gradient(135deg, #10b981, #059669); }
-    .bg-purple { background: linear-gradient(135deg, #a855f7, #7e22ce); }
-    .bg-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
-    .bg-orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
-    .bg-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+    .logo {
+      font-size: 18px;
+      font-weight: 800;
+      color: #f97316;
+    }
 
-    .history-card { background: #111827; border-radius: 16px; padding: 16px; margin: 16px; border: 1px solid #1f2937; }
-    table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; }
-    th, td { padding: 10px 4px; border-bottom: 1px solid #1f2937; }
+    .balance-box {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 700;
+      color: #fbbf24;
+      border: 1px solid #374151;
+    }
 
-    .nav-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: #111827; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #1f2937; z-index: 50; }
-    .nav-item { color: #9ca3af; text-align: center; font-size: 11px; font-weight: 600; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .nav-item.active { color: #f97316; }
+    .btn-press {
+      transition: transform 0.08s ease;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
 
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 500; backdrop-filter: blur(6px); }
-    .modal-content { background: #1f2937; padding: 20px; border-radius: 24px; width: 90%; max-width: 380px; text-align: center; border: 1px solid #374151; position: relative; z-index: 600; }
-    .hidden { display: none !important; }
+    .btn-press:active {
+      transform: scale(0.92);
+    }
 
-    input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #374151; background: #111827; color: white; font-size: 15px; margin: 8px 0; text-align: center; outline: none; }
-    .btn-confirm { width: 100%; padding: 14px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; font-weight: bold; border-radius: 14px; font-size: 16px; margin-top: 8px; }
+    .timer-card {
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      border-radius: 18px;
+      padding: 16px;
+      margin: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-    .profile-card { background: #111827; border-radius: 16px; padding: 20px; margin: 16px; border: 1px solid #1f2937; text-align: center; }
-    .profile-avatar { width: 64px; height: 64px; background: linear-gradient(135deg, #f97316, #ef4444); border-radius: 50%; margin: 0 auto 12px; display: flex; justify-content: center; align-items: center; font-size: 28px; }
-    .profile-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+    .timer-display {
+      background: #000;
+      font-size: 26px;
+      font-weight: 900;
+      padding: 6px 16px;
+      border-radius: 10px;
+      color: #38bdf8;
+      font-family: monospace;
+    }
 
-    /* Grand Win Popup Style */
-    .win-modal-card { background: linear-gradient(180deg, #ff7e5f 0%, #feb47b 100%); border-radius: 28px; padding: 24px 16px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.8); position: relative; border: 2px solid #ffeccc; }
-    .win-rocket { font-size: 50px; margin-bottom: -10px; animation: bounce 1s infinite alternate; }
-    .win-title { font-size: 22px; font-weight: 900; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.3); margin-bottom: 12px; }
-    .win-result-badge { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; }
-    .badge { padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 13px; color: white; }
-    .win-ticket { background: #ffffff; color: #111; border-radius: 16px; padding: 16px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); margin-top: 10px; position: relative; }
-    .win-amount { font-size: 28px; font-weight: 900; color: #e11d48; margin-top: 4px; }
-    @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
+    .bet-container {
+      padding: 0 16px;
+    }
 
-    .tx-item { background: #111827; padding: 12px; border-radius: 12px; border: 1px solid #1f2937; margin-bottom: 10px; text-align: left; font-size: 13px; }
+    .bet-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
 
-    /* Clickable / Auth Toggle Button Fix */
+    .num-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .size-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .btn-color,
+    .btn-num,
+    .btn-size {
+      padding: 14px 8px;
+      border-radius: 14px;
+      font-weight: 800;
+      color: white;
+      font-size: 15px;
+      text-align: center;
+    }
+
+    .bg-green {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .bg-purple {
+      background: linear-gradient(135deg, #a855f7, #7e22ce);
+    }
+
+    .bg-red {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .bg-orange {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .bg-blue {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    }
+
+    .history-card {
+      background: #111827;
+      border-radius: 16px;
+      padding: 16px;
+      margin: 16px;
+      border: 1px solid #1f2937;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 10px 4px;
+      border-bottom: 1px solid #1f2937;
+    }
+
+    .nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: #111827;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      border-top: 1px solid #1f2937;
+      z-index: 50;
+    }
+
+    .nav-item {
+      color: #9ca3af;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    .nav-item.active {
+      color: #f97316;
+    }
+
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 500;
+      backdrop-filter: blur(6px);
+    }
+
+    .modal-content {
+      background: #1f2937;
+      padding: 20px;
+      border-radius: 24px;
+      width: 90%;
+      max-width: 380px;
+      text-align: center;
+      border: 1px solid #374151;
+      position: relative;
+      z-index: 600;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #374151;
+      background: #111827;
+      color: white;
+      font-size: 15px;
+      margin: 8px 0;
+      text-align: center;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: #f97316;
+    }
+
+    .btn-confirm {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      font-weight: bold;
+      border-radius: 14px;
+      font-size: 16px;
+      margin-top: 8px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .profile-card {
+      background: #111827;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 16px;
+      border: 1px solid #1f2937;
+      text-align: center;
+    }
+
+    .profile-avatar {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 28px;
+    }
+
+    .profile-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    /* Win Popup */
+
+    .win-modal-card {
+      background: linear-gradient(180deg, #ff7e5f 0%, #feb47b 100%);
+      border-radius: 28px;
+      padding: 24px 16px;
+      width: 90%;
+      max-width: 350px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+      position: relative;
+      border: 2px solid #ffeccc;
+    }
+
+    .win-rocket {
+      font-size: 50px;
+      margin-bottom: -10px;
+      animation: bounce 1s infinite alternate;
+    }
+
+    .win-title {
+      font-size: 22px;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      margin-bottom: 12px;
+    }
+
+    .win-result-badge {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 13px;
+      color: white;
+    }
+
+    .win-ticket {
+      background: #ffffff;
+      color: #111;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+      margin-top: 10px;
+      position: relative;
+    }
+
+    .win-amount {
+      font-size: 28px;
+      font-weight: 900;
+      color: #e11d48;
+      margin-top: 4px;
+    }
+
+    @keyframes bounce {
+      0% {
+        transform: translateY(0);
+      }
+
+      100% {
+        transform: translateY(-10px);
+      }
+    }
+
+    .tx-item {
+      background: #111827;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+      margin-bottom: 10px;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    /* AUTH BUTTON FIX */
+
     .auth-toggle-btn {
       background: transparent !important;
       border: none !important;
@@ -81,469 +411,1006 @@
       display: inline-block !important;
       user-select: none;
       -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    .auth-toggle-btn:active {
+      transform: scale(0.96);
+    }
+
+    #auth-submit-btn {
+      position: relative;
+      z-index: 1000;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+
+    #auth-modal {
+      z-index: 1500;
+    }
+
+    #auth-modal .modal-content {
+      z-index: 1600;
+    }
+
+    #auth-modal input,
+    #auth-modal button {
+      pointer-events: auto;
     }
   </style>
 </head>
+
 <body>
 
   <div id="toast-container"></div>
 
+  <!-- APP -->
+
   <div id="app-content" class="hidden">
+
     <div class="header">
-      <div class="logo">👑 CKLOTTERY</div>
-      <div class="balance-box">K<span id="balance">0</span></div>
-      <!-- Game Tab -->
-    <div id="page-game">
-      <div class="timer-card">
-        <div>
-          <div style="font-size: 12px; opacity: 0.8;">Win Go 1Min</div>
-          <div id="period-text" style="font-size: 15px; font-weight: 800; margin-top: 2px;">--</div>
-        </div>
-        <div class="timer-display" id="timer-display">00:60</div>
+
+      <div class="logo">
+        👑 CKLOTTERY
       </div>
+
+      <div class="balance-box">
+        K<span id="balance">0</span>
+      </div>
+
+    </div>
+
+
+    <!-- GAME -->
+
+    <div id="page-game">
+
+      <div class="timer-card">
+
+        <div>
+
+          <div style="font-size: 12px; opacity: 0.8;">
+            Win Go 1Min
+          </div>
+
+          <div
+            id="period-text"
+            style="font-size: 15px; font-weight: 800; margin-top: 2px;"
+          >
+            --
+          </div>
+
+        </div>
+
+        <div
+          class="timer-display"
+          id="timer-display"
+        >
+          00:60
+        </div>
+
+      </div>
+
 
       <div class="bet-container">
+
         <div class="bet-grid">
-          <button class="btn-color bg-green btn-press" onclick="openBetModal('အစိမ်း')">အစိမ်း</button>
-          <button class="btn-color bg-purple btn-press" onclick="openBetModal('ခရမ်း')">ခရမ်း</button>
-          <button class="btn-color bg-red btn-press" onclick="openBetModal('အနီ')">အနီ</button>
+
+          <button
+            type="button"
+            class="btn-color bg-green btn-press"
+            onclick="openBetModal('အစိမ်း')"
+          >
+            အစိမ်း
+          </button>
+
+          <button
+            type="button"
+            class="btn-color bg-purple btn-press"
+            onclick="openBetModal('ခရမ်း')"
+          >
+            ခရမ်း
+          </button>
+
+          <button
+            type="button"
+            class="btn-color bg-red btn-press"
+            onclick="openBetModal('အနီ')"
+          >
+            အနီ
+          </button>
+
         </div>
+
 
         <div class="num-grid">
-          <button class="btn-num bg-purple btn-press" onclick="openBetModal('0')">0</button>
-          <button class="btn-num bg-green btn-press" onclick="openBetModal('1')">1</button>
-          <button class="btn-num bg-red btn-press" onclick="openBetModal('2')">2</button>
-          <button class="btn-num bg-green btn-press" onclick="openBetModal('3')">3</button>
-          <button class="btn-num bg-red btn-press" onclick="openBetModal('4')">4</button>
 
-          <button class="btn-num bg-purple btn-press" onclick="openBetModal('5')">5</button>
-          <button class="btn-num bg-green btn-press" onclick="openBetModal('6')">6</button>
-          <button class="btn-num bg-red btn-press" onclick="openBetModal('7')">7</button>
-          <button class="btn-num bg-green btn-press" onclick="openBetModal('8')">8</button>
-          <button class="btn-num bg-red btn-press" onclick="openBetModal('9')">9</button>
+          <button type="button" class="btn-num bg-purple btn-press" onclick="openBetModal('0')">0</button>
+
+          <button type="button" class="btn-num bg-green btn-press" onclick="openBetModal('1')">1</button>
+
+          <button type="button" class="btn-num bg-red btn-press" onclick="openBetModal('2')">2</button>
+
+          <button type="button" class="btn-num bg-green btn-press" onclick="openBetModal('3')">3</button>
+
+          <button type="button" class="btn-num bg-red btn-press" onclick="openBetModal('4')">4</button>
+
+          <button type="button" class="btn-num bg-purple btn-press" onclick="openBetModal('5')">5</button>
+
+          <button type="button" class="btn-num bg-green btn-press" onclick="openBetModal('6')">6</button>
+
+          <button type="button" class="btn-num bg-red btn-press" onclick="openBetModal('7')">7</button>
+
+          <button type="button" class="btn-num bg-green btn-press" onclick="openBetModal('8')">8</button>
+
+          <button type="button" class="btn-num bg-red btn-press" onclick="openBetModal('9')">9</button>
+
         </div>
+
 
         <div class="size-grid">
-          <button class="btn-size bg-orange btn-press" onclick="openBetModal('အကြီး')">အကြီး (5-9)</button>
-          <button class="btn-size bg-blue btn-press" onclick="openBetModal('အသေး')">အသေး (0-4)</button>
+
+          <button
+            type="button"
+            class="btn-size bg-orange btn-press"
+            onclick="openBetModal('အကြီး')"
+          >
+            အကြီး (5-9)
+          </button>
+
+          <button
+            type="button"
+            class="btn-size bg-blue btn-press"
+            onclick="openBetModal('အသေး')"
+          >
+            အသေး (0-4)
+          </button>
+
         </div>
+
       </div>
 
+
       <div class="history-card">
-        <h3 style="margin-bottom: 12px; font-size: 15px; color: #9ca3af;">ထွက်ဂဏန်း မှတ်တမ်း</h3>
+
+        <h3
+          style="margin-bottom: 12px; font-size: 15px; color: #9ca3af;"
+        >
+          ထွက်ဂဏန်း မှတ်တမ်း
+        </h3>
+
         <table>
+
           <thead>
+
             <tr>
               <th>ပွဲစဉ်</th>
               <th>ဂဏန်း</th>
               <th>အသေး/အကြီး</th>
               <th>အရောင်</th>
             </tr>
+
           </thead>
+
           <tbody id="history-rows"></tbody>
+
         </table>
+
       </div>
+
     </div>
 
-    <!-- Profile Tab -->
+
+    <!-- PROFILE -->
+
     <div id="page-profile" class="hidden">
+
       <div class="profile-card">
-        <div class="profile-avatar">👤</div>
-        <h3 id="profile-phone" style="color: #f3f4f6;">--</h3>
-        <p style="color: #9ca3af; font-size: 13px; margin-top: 4px;">လက်ကျန်ငွေ: <span id="profile-balance" style="color: #fbbf24; font-weight: bold;">0</span> K</p>
-        
-        <div class="profile-actions">
-          <button class="btn-confirm btn-press" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="openDepositModal()">ငွေသွင်းမည်</button>
-          <button class="btn-confirm btn-press" style="background: linear-gradient(135deg, #ef4444, #dc2626);" onclick="openWithdrawModal()">ငွေထုတ်မည်</button>
+
+        <div class="profile-avatar">
+          👤
         </div>
+
+        <h3
+          id="profile-phone"
+          style="color: #f3f4f6;"
+        >
+          --
+        </h3>
+
+        <p
+          style="color: #9ca3af; font-size: 13px; margin-top: 4px;"
+        >
+          လက်ကျန်ငွေ:
+          <span
+            id="profile-balance"
+            style="color: #fbbf24; font-weight: bold;"
+          >
+            0
+          </span>
+          K
+        </p>
+
+
+        <div class="profile-actions">
+
+          <button
+            type="button"
+            class="btn-confirm btn-press"
+            style="background: linear-gradient(135deg, #10b981, #059669);"
+            onclick="openDepositModal()"
+          >
+            ငွေသွင်းမည်
+          </button>
+
+          <button
+            type="button"
+            class="btn-confirm btn-press"
+            style="background: linear-gradient(135deg, #ef4444, #dc2626);"
+            onclick="openWithdrawModal()"
+          >
+            ငွေထုတ်မည်
+          </button>
+
+        </div>
+
       </div>
+
 
       <div style="padding: 0 16px; margin-top: 10px;">
-        <button class="btn-confirm btn-press" style="background: #1f2937; border: 1px solid #374151;" onclick="openTxHistoryModal()">📜 ငွေသွင်း/ငွေထုတ် မှတ်တမ်း ကြည့်ရန်</button>
-        <button class="btn-confirm btn-press" style="background: #374151; margin-top: 10px;" onclick="logout()">အကောင့်မှ ထွက်မည်</button>
+
+        <button
+          type="button"
+          class="btn-confirm btn-press"
+          style="background: #1f2937; border: 1px solid #374151;"
+          onclick="openTxHistoryModal()"
+        >
+          📜 ငွေသွင်း/ငွေထုတ် မှတ်တမ်း ကြည့်ရန်
+        </button>
+
+        <button
+          type="button"
+          class="btn-confirm btn-press"
+          style="background: #374151; margin-top: 10px;"
+          onclick="logout()"
+        >
+          အကောင့်မှ ထွက်မည်
+        </button>
+
       </div>
+
     </div>
 
-    <!-- Navigation -->
+
+    <!-- NAVIGATION -->
+
     <div class="nav-bar">
-      <div class="nav-item active btn-press" id="nav-game" onclick="switchTab('game')">
+
+      <div
+        class="nav-item active btn-press"
+        id="nav-game"
+        onclick="switchTab('game')"
+      >
         <span style="font-size: 18px;">🎰</span>
         <span>ဂိမ်း</span>
       </div>
-      <div class="nav-item btn-press" id="nav-profile" onclick="switchTab('profile')">
+
+      <div
+        class="nav-item btn-press"
+        id="nav-profile"
+        onclick="switchTab('profile')"
+      >
         <span style="font-size: 18px;">👤</span>
         <span>ပရိုဖိုင်</span>
       </div>
+
     </div>
+
   </div>
 
-  <!-- Win Result Modal -->
+
+  <!-- WIN RESULT -->
+
   <div id="win-modal" class="modal hidden">
+
     <div class="win-modal-card">
-      <div class="win-rocket">🚀</div>
-      <div class="win-title">သင်အနိုင်ရတဲ့အတွက် ဂုဏ်ယူပါတယ်!</div>
-      
-      <div class="win-result-badge">
-        <span class="badge" id="win-badge-color" style="background:#10b981;">--</span>
-        <span class="badge" style="background:#374151;" id="win-badge-num">--</span>
-        <span class="badge" style="background:#f59e0b;" id="win-badge-bs">--</span>
+
+      <div class="win-rocket">
+        🚀
       </div>
+
+      <div class="win-title">
+        သင်အနိုင်ရတဲ့အတွက် ဂုဏ်ယူပါတယ်!
+      </div>
+
+      <div class="win-result-badge">
+
+        <span
+          class="badge"
+          id="win-badge-color"
+          style="background:#10b981;"
+        >
+          --
+        </span>
+
+        <span
+          class="badge"
+          style="background:#374151;"
+          id="win-badge-num"
+        >
+          --
+        </span>
+
+        <span
+          class="badge"
+          style="background:#f59e0b;"
+          id="win-badge-bs"
+        >
+          --
+        </span>
+
+      </div>
+
 
       <div class="win-ticket">
-        <div style="font-size: 12px; color: #6b7280; font-weight: bold;">ဘောနပ်စ် အနိုင်ငွေ</div>
-        <div class="win-amount">K<span id="win-modal-amount">0</span></div>
-        <div style="font-size: 11px; color: #9ca3af; margin-top: 6px;">ပွဲစဉ်နံပါတ်: Win 1 minute <span id="win-modal-period">--</span></div>
+
+        <div
+          style="font-size: 12px; color: #6b7280; font-weight: bold;"
+        >
+          ဘောနပ်စ် အနိုင်ငွေ
+        </div>
+
+        <div class="win-amount">
+          K<span id="win-modal-amount">0</span>
+        </div>
+
+        <div
+          style="font-size: 11px; color: #9ca3af; margin-top: 6px;"
+        >
+          ပွဲစဉ်နံပါတ်:
+          Win 1 minute
+          <span id="win-modal-period">--</span>
+        </div>
+
       </div>
 
-      <button class="btn-confirm btn-press" style="margin-top: 16px; background: #111827;" onclick="closeModal('win-modal')">ပိတ်မည်</button>
+
+      <button
+        type="button"
+        class="btn-confirm btn-press"
+        style="margin-top: 16px; background: #111827;"
+        onclick="closeModal('win-modal')"
+      >
+        ပိတ်မည်
+      </button>
+
     </div>
+
   </div>
 
-  <!-- Deposit Request Modal -->
+
+  <!-- DEPOSIT -->
+
   <div id="deposit-modal" class="modal hidden">
+
     <div class="modal-content">
-      <h3 style="color: #10b981; margin-bottom: 10px;">ငွေသွင်းမည်</h3>
+
+      <h3
+        style="color: #10b981; margin-bottom: 10px;"
+      >
+        ငွေသွင်းမည်
+      </h3>
+
       <select id="dep-method">
-        <option value="KPay">KPay</option>
-        <option value="WavePay">WavePay</option>
+
+        <option value="KPay">
+          KPay
+        </option>
+
+        <option value="WavePay">
+          WavePay
+        </option>
+
       </select>
-      <input type="number" id="dep-amount" placeholder="ငွေပမာဏ (ကျပ်)">
-      <button class="btn-confirm btn-press" onclick="submitDepositRequest()">ဆက်လက်လုပ်ဆောင်မည်</button>
-      <button style="margin-top: 12px; background: none; border: none; color: #9ca3af;" class="btn-press" onclick="closeModal('deposit-modal')">ပိတ်မည်</button>
+
+      <input
+        type="number"
+        id="dep-amount"
+        placeholder="ငွေပမာဏ (ကျပ်)"
+      >
+
+      <button
+        type="button"
+        class="btn-confirm btn-press"
+        onclick="submitDepositRequest()"
+      >
+        ဆက်လက်လုပ်ဆောင်မည်
+      </button>
+
+      <button
+        type="button"
+        style="margin-top: 12px; background: none; border: none; color: #9ca3af;"
+        class="btn-press"
+        onclick="closeModal('deposit-modal')"
+      >
+        ပိတ်မည်
+      </button>
+
     </div>
+
   </div>
 
-  <!-- Transaction History Modal -->
+
+  <!-- TRANSACTION HISTORY -->
+
   <div id="tx-history-modal" class="modal hidden">
-    <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
-      <h3 style="color: #f59e0b; margin-bottom: 12px;">ငွေသွင်း/ငွေထုတ် မှတ်တမ်း</h3>
+
+    <div
+      class="modal-content"
+      style="max-height: 80vh; overflow-y: auto;"
+    >
+
+      <h3
+        style="color: #f59e0b; margin-bottom: 12px;"
+      >
+        ငွေသွင်း/ငွေထုတ် မှတ်တမ်း
+      </h3>
+
       <div id="tx-history-list"></div>
-      <button style="margin-top: 12px; background: none; border: none; color: #9ca3af;" class="btn-press" onclick="closeModal('tx-history-modal')">ပိတ်မည်</button>
+
+      <button
+        type="button"
+        style="margin-top: 12px; background: none; border: none; color: #9ca3af;"
+        class="btn-press"
+        onclick="closeModal('tx-history-modal')"
+      >
+        ပိတ်မည်
+      </button>
+
     </div>
+
   </div>
 
-  <!-- Withdraw Modal -->
+
+  <!-- WITHDRAW -->
+
   <div id="withdraw-modal" class="modal hidden">
+
     <div class="modal-content">
-      <h3 style="color: #ef4444; margin-bottom: 10px;">ငွေထုတ်မည်</h3>
+
+      <h3
+        style="color: #ef4444; margin-bottom: 10px;"
+      >
+        ငွေထုတ်မည်
+      </h3>
+
       <select id="wd-method">
-        <option value="KPay">KPay</option>
-        <option value="WavePay">WavePay</option>
+
+        <option value="KPay">
+          KPay
+        </option>
+
+        <option value="WavePay">
+          WavePay
+        </option>
+
       </select>
-      <input type="text" id="wd-user-phone" placeholder="ငွေလက်ခံမည့် ဖုန်းနံပါတ်">
-      <input type="number" id="wd-amount" placeholder="ထုတ်ယူလိုသည့် ပမာဏ (ကျပ်)">
-      <button class="btn-confirm btn-press" onclick="submitWithdraw()">ငွေထုတ်ယူမည်</button>
-      <button style="margin-top: 12px; background: none; border: none; color: #9ca3af;" class="btn-press" onclick="closeModal('withdraw-modal')">မလုပ်တော့ပါ</button>
+
+      <input
+        type="text"
+        id="wd-user-phone"
+        placeholder="ငွေလက်ခံမည့် ဖုန်းနံပါတ်"
+      >
+
+      <input
+        type="number"
+        id="wd-amount"
+        placeholder="ထုတ်ယူလိုသည့် ပမာဏ (ကျပ်)"
+      >
+
+      <button
+        type="button"
+        class="btn-confirm btn-press"
+        onclick="submitWithdraw()"
+      >
+        ငွေထုတ်ယူမည်
+      </button>
+
+      <button
+        type="button"
+        style="margin-top: 12px; background: none; border: none; color: #9ca3af;"
+        class="btn-press"
+        onclick="closeModal('withdraw-modal')"
+      >
+        မလုပ်တော့ပါ
+      </button>
+
     </div>
+
   </div>
 
-  <!-- Bet Modal -->
+
+  <!-- BET -->
+
   <div id="bet-modal" class="modal hidden">
+
     <div class="modal-content">
-      <h3 id="bet-title" style="color: #f59e0b; margin-bottom: 10px;">လောင်းမည်</h3>
-      <input type="number" id="bet-amount" value="1000" min="100">
-      <button class="btn-confirm btn-press" onclick="submitBet()">အတည်ပြုမည်</button>
-      <button style="margin-top: 12px; background: none; border: none; color: #9ca3af;" class="btn-press" onclick="closeModal('bet-modal')">မလုပ်တော့ပါ</button>
+
+      <h3
+        id="bet-title"
+        style="color: #f59e0b; margin-bottom: 10px;"
+      >
+        လောင်းမည်
+      </h3>
+
+      <input
+        type="number"
+        id="bet-amount"
+        value="1000"
+        min="100"
+      >
+
+      <button
+        type="button"
+        class="btn-confirm btn-press"
+        onclick="submitBet()"
+      >
+        အတည်ပြုမည်
+      </button>
+
+      <button
+        type="button"
+        style="margin-top: 12px; background: none; border: none; color: #9ca3af;"
+        class="btn-press"
+        onclick="closeModal('bet-modal')"
+      >
+        မလုပ်တော့ပါ
+      </button>
+
     </div>
+
   </div>
 
-  <!-- Auth Modal (Login / Register) -->
+
+  <!-- AUTH -->
+
   <div id="auth-modal" class="modal">
+
     <div class="modal-content">
-      <h2 id="auth-title" style="color: #f97316; margin-bottom: 8px;">Login ဝင်မည်</h2>
-      <input type="text" id="auth-phone" placeholder="ဖုန်းနံပါတ်">
-      <input type="password" id="auth-pass" placeholder="စကားဝှက်">
-      <button class="btn-confirm btn-press" id="auth-submit-btn" onclick="handleAuth()">Login ဝင်မည်</button>
-      
-      <!-- ပြင်ဆင်ပြီးသား Toggle Button -->
-      <div style="margin-top: 10px; position: relative; z-index: 999;">
-        <button type="button" class="auth-toggle-btn" onclick="toggleAuthMode(event)" ontouchstart="toggleAuthMode(event)">
+
+      <h2
+        id="auth-title"
+        style="color: #f97316; margin-bottom: 8px;"
+      >
+        Login ဝင်မည်
+      </h2>
+
+
+      <input
+        type="text"
+        id="auth-phone"
+        placeholder="ဖုန်းနံပါတ်"
+        autocomplete="username"
+      >
+
+
+      <input
+        type="password"
+        id="auth-pass"
+        placeholder="စကားဝှက်"
+        autocomplete="current-password"
+      >
+
+
+      <!-- LOGIN / REGISTER -->
+
+            <button
+        type="button"
+        class="btn-confirm btn-press"
+        id="auth-submit-btn"
+        onclick="handleAuth()"
+      >
+        Login ဝင်မည်
+      </button>
+
+      <div style="margin-top:10px; position:relative; z-index:999;">
+        <button
+          type="button"
+          class="auth-toggle-btn"
+          id="auth-toggle-btn"
+          onclick="toggleAuthMode(event)"
+        >
           <span id="auth-toggle-text">အကောင့်အသစ်ဖွင့်မည်</span>
         </button>
       </div>
+
     </div>
   </div>
 
   <script>
     const socket = io();
+
     let currentUser = null;
     let selectedSelection = '';
     let isRegisterMode = false;
 
     function showToast(msg) {
       const container = document.getElementById('toast-container');
+
       const toast = document.createElement('div');
       toast.className = 'toast';
-      toast.innerText = msg;
+      toast.textContent = msg;
+
       container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
+
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
     }
 
-    function checkAutoLogin() {
-      const savedPhone = localStorage.getItem('user_phone');
-      if (savedPhone) {
-        fetch(`/api/user/${savedPhone}`)
-          .then(res => res.json())
-          .then(data => { if (data.success) loginSuccess(data.user); });
-      }
-    }
-
-    // Toggle Function (Touch & Click Safe)
     function toggleAuthMode(e) {
       if (e) {
         e.preventDefault();
         e.stopPropagation();
       }
+
       isRegisterMode = !isRegisterMode;
+
       const title = document.getElementById('auth-title');
       const submitBtn = document.getElementById('auth-submit-btn');
       const toggleText = document.getElementById('auth-toggle-text');
 
       if (isRegisterMode) {
-        title.textContent = "အကောင့်အသစ်ဖွင့်မည်";
-        submitBtn.textContent = "Register ပြုလုပ်မည်";
-        toggleText.textContent = "အကောင့်ရှိပြီးသားပါ (Login ဝင်မည်)";
+        title.textContent = 'အကောင့်အသစ်ဖွင့်မည်';
+        submitBtn.textContent = 'Register ပြုလုပ်မည်';
+        toggleText.textContent = 'အကောင့်ရှိပြီးသားပါ (Login ဝင်မည်)';
       } else {
-        title.textContent = "Login ဝင်မည်";
-        submitBtn.textContent = "Login ဝင်မည်";
-        toggleText.textContent = "အကောင့်အသစ်ဖွင့်မည်";
+        title.textContent = 'Login ဝင်မည်';
+        submitBtn.textContent = 'Login ဝင်မည်';
+        toggleText.textContent = 'အကောင့်အသစ်ဖွင့်မည်';
       }
     }
 
     function handleAuth() {
-      const phone = document.getElementById('auth-phone').value;
+      const phone = document.getElementById('auth-phone').value.trim();
       const password = document.getElementById('auth-pass').value;
-      if (!phone || !password) return showToast("ဖုန်းနံပါတ်နှင့် စကားဝှက် ဖြည့်သွင်းပါ");
 
-      const endpoint = isRegisterMode ? '/api/register' : '/api/login';
+      if (!phone || !password) {
+        showToast('ဖုန်းနံပါတ်နှင့် စကားဝှက် ဖြည့်သွင်းပါ');
+        return;
+      }
+
+      const endpoint = isRegisterMode
+        ? '/api/register'
+        : '/api/login';
 
       fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, password })
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          phone: phone,
+          password: password
+        })
       })
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          showToast(isRegisterMode ? "အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်" : "Login ဝင်ရောက်ပြီးပါပြီ");
+          showToast(
+            isRegisterMode
+              ? 'အကောင့်ဖွင့်ခြင်း အောင်မြင်ပါသည်'
+              : 'Login ဝင်ရောက်ပြီးပါပြီ'
+          );
+
           loginSuccess(data.user);
         } else {
-          showToast(data.message || "မှားယွင်းနေပါသည်။ ပြန်လည်ကြိုးစားပါ");
+          showToast(
+            data.message || 'မှားယွင်းနေပါသည်။ ပြန်လည်ကြိုးစားပါ'
+          );
         }
       })
       .catch(err => {
-        showToast("Server နှင့် ချိတ်ဆက်၍ မရပါ");
+        console.error(err);
+        showToast('Server နှင့် ချိတ်ဆက်၍ မရပါ');
       });
     }
+
+    function checkAutoLogin() {
+      const savedPhone = localStorage.getItem('user_phone');
+
+      if (!savedPhone) return;
+
+      fetch('/api/user/' + encodeURIComponent(savedPhone))
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.user) {
+            loginSuccess(data.user);
+          }
+        })
+        .catch(err => {
+          console.log('Auto login failed:', err);
+        });
+    }
+
     function loginSuccess(user) {
       currentUser = user;
+
       localStorage.setItem('user_phone', user.phone);
-      updateBalanceDisplay(user.balance);
-      document.getElementById('profile-phone').textContent = user.phone;
-      document.getElementById('auth-modal').classList.add('hidden');
-      document.getElementById('app-content').classList.remove('hidden');
-      
-      socket.on(`bet_result_${user.phone}`, (res) => {
-        if (res.status === 'WIN') {
-          document.getElementById('win-modal-amount').textContent = res.winAmount.toLocaleString();
-          document.getElementById('win-modal-period').textContent = res.period;
-          document.getElementById('win-badge-color').textContent = res.color;
-          document.getElementById('win-badge-num').textContent = res.winningNum;
-          document.getElementById('win-badge-bs').textContent = res.bs;
-          document.getElementById('win-modal').classList.remove('hidden');
-        } else {
-          showToast(`ပွဲစဉ် [${res.period}] တွင် မကံကောင်းသေးပါ`);
-        }
-      });
+
+      updateBalanceDisplay(user.balance || 0);
+
+      document.getElementById('profile-phone').textContent =
+        user.phone;
+
+      document.getElementById('auth-modal')
+        .classList.add('hidden');
+
+      document.getElementById('app-content')
+        .classList.remove('hidden');
 
       loadHistory();
     }
 
-    function updateBalanceDisplay(bal) {
-      currentUser.balance = bal;
-      document.getElementById('balance').textContent = bal.toLocaleString();
-      document.getElementById('profile-balance').textContent = bal.toLocaleString();
+    function updateBalanceDisplay(balance) {
+      if (!currentUser) return;
+
+      currentUser.balance = Number(balance) || 0;
+
+      document.getElementById('balance').textContent =
+        currentUser.balance.toLocaleString();
+
+      document.getElementById('profile-balance').textContent =
+        currentUser.balance.toLocaleString();
+    }
+
+    function switchTab(tab) {
+      document.getElementById('page-game')
+        .classList.toggle('hidden', tab !== 'game');
+
+      document.getElementById('page-profile')
+        .classList.toggle('hidden', tab !== 'profile');
+
+      document.getElementById('nav-game')
+        .classList.toggle('active', tab === 'game');
+
+      document.getElementById('nav-profile')
+        .classList.toggle('active', tab === 'profile');
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('user_phone');
+      location.reload();
+    }
+
+    socket.on('timer_tick', (data) => {
+      const period = document.getElementById('period-text');
+      const timer = document.getElementById('timer-display');
+
+      if (period) {
+        period.textContent = data.period;
+      }
+
+      if (timer) {
+        const seconds = Number(data.timeLeft) || 0;
+
+        timer.textContent =
+          '00:' + (seconds < 10 ? '0' + seconds : seconds);
+      }
+    });
+
+    socket.on('new_game_result', () => {
+      loadHistory();
+
+      if (currentUser) {
+        fetch(
+          '/api/user/' +
+          encodeURIComponent(currentUser.phone)
+        )
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && data.user) {
+            updateBalanceDisplay(data.user.balance);
+          }
+        });
+      }
+    });
+
+    function loadHistory() {
+      fetch('/api/history')
+        .then(r => r.json())
+        .then(rows => {
+          const tbody =
+            document.getElementById('history-rows');
+
+          if (!tbody) return;
+
+          tbody.innerHTML = '';
+
+          if (!Array.isArray(rows)) return;
+
+          rows.forEach(r => {
+            const tr = document.createElement('tr');
+
+            tr.innerHTML = `
+              <td>${r.period ?? '--'}</td>
+              <td><b>${r.number ?? '--'}</b></td>
+              <td>${r.bigSmall ?? '--'}</td>
+              <td>${r.color ?? '--'}</td>
+            `;
+
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(err => {
+          console.log('History error:', err);
+        });
     }
 
     function openDepositModal() {
-      document.getElementById('deposit-modal').classList.remove('hidden');
+      document.getElementById('deposit-modal')
+        .classList.remove('hidden');
     }
 
-    function submitDepositRequest() {
-      const method = document.getElementById('dep-method').value;
-      const amount = parseFloat(document.getElementById('dep-amount').value);
-      if (!amount || amount <= 0) return showToast("ပမာဏ မှားယွင်းနေသည်");
-
-      fetch('/api/transaction/deposit-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: currentUser.phone, method, amount })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          showToast("ငွေသွင်းတောင်းဆိုလိုက်ပါပြီ။ မှတ်တမ်းတွင် ခဏစောင့်ပါ");
-          closeModal('deposit-modal');
-          openTxHistoryModal();
-        }
-      });
+    function openWithdrawModal() {
+      document.getElementById('withdraw-modal')
+        .classList.remove('hidden');
     }
 
     function openTxHistoryModal() {
-      fetch(`/api/transaction/user-history/${currentUser.phone}`)
-        .then(r => r.json())
-        .then(rows => {
-          const list = document.getElementById('tx-history-list');
-          list.innerHTML = '';
+      if (!currentUser) return;
 
-          if (rows.length === 0) list.innerHTML = '<p style="color:#9ca3af;">မှတ်တမ်း မရှိသေးပါ။</p>';
+      fetch(
+        '/api/transaction/user-history/' +
+        encodeURIComponent(currentUser.phone)
+      )
+      .then(r => r.json())
+      .then(rows => {
+        const list =
+          document.getElementById('tx-history-list');
 
+        list.innerHTML = '';
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+          list.innerHTML =
+            '<p style="color:#9ca3af;">မှတ်တမ်း မရှိသေးပါ။</p>';
+        }
+
+        if (Array.isArray(rows)) {
           rows.forEach(tx => {
             const div = document.createElement('div');
+
             div.className = 'tx-item';
 
-            let actionArea = '';
-
-            if (tx.status === 'PENDING_ADMIN_NUMBER') {
-              actionArea = `<div style="color:#fbbf24; margin-top:4px;">⏳ Admin ဖုန်းနံပါတ် ပို့ပေးသည်အထိ ခဏစောင့်ပါ...</div>`;
-            } else if (tx.status === 'WAITING_USER_PAY') {
-              actionArea = `
-                <div style="background:#1e293b; padding:8px; border-radius:8px; margin:6px 0;">
-                  <div style="color:#10b981; font-weight:bold;">လွှဲရမည့်နံပါတ်: ${tx.admin_pay_number}</div>
-                  <input type="text" id="pay-phone-${tx.id}" placeholder="သင့်ဖုန်းနံပါတ်" style="margin-top:6px;">
-                  <input type="file" id="receipt-file-${tx.id}" accept="image/*" style="margin-top:4px;">
-                  <button class="btn-confirm btn-press" style="padding:8px; font-size:13px;" onclick="uploadReceipt(${tx.id})">ပြေစာတင်မည် (Confirm)</button>
-                </div>
-              `;
-            } else if (tx.status === 'PENDING_APPROVAL') {
-              actionArea = `<div style="color:#38bdf8; margin-top:4px;">⏳ Admin ခွင့်ပြုချက် စောင့်ဆိုင်းနေပါသည်...</div>`;
-            } else if (tx.status === 'APPROVED') {
-              actionArea = `<div style="color:#10b981; font-weight:bold; margin-top:4px;">✅ အောင်မြင်ပါသည်</div>`;
-            } else {
-              actionArea = `<div style="color:#ef4444; font-weight:bold; margin-top:4px;">❌ ငြင်းပယ်ခံရသည်</div>`;
-            }
-
             div.innerHTML = `
-              <div style="display:flex; justify-content:space-between;">
-                <b>${tx.type} (${tx.method})</b>
-                <span style="color:#fbbf24; font-weight:bold;">K${tx.amount.toLocaleString()}</span>
+              <div style="display:flex;justify-content:space-between;">
+                <b>${tx.type || ''} (${tx.method || ''})</b>
+                <span style="color:#fbbf24;font-weight:bold;">
+                  K${Number(tx.amount || 0).toLocaleString()}
+                </span>
               </div>
-              ${actionArea}
+
+              <div style="color:#9ca3af;margin-top:5px;">
+                Status: ${tx.status || '--'}
+              </div>
             `;
+
             list.appendChild(div);
           });
+        }
 
-          document.getElementById('tx-history-modal').classList.remove('hidden');
-        });
-    }
-
-    function uploadReceipt(txId) {
-      const userPayPhone = document.getElementById(`pay-phone-${txId}`).value;
-      const fileInput = document.getElementById(`receipt-file-${txId}`);
-
-      if (!fileInput.files || fileInput.files.length === 0) return showToast("ပြေစာ ပုံ ထည့်သွင်းပေးပါ");
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const base64Image = e.target.result;
-        fetch('/api/transaction/upload-receipt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ txId, receiptImg: base64Image, userPayPhone })
-        })
-        .then(r => r.json())
-        .then(d => {
-          showToast(d.message);
-          openTxHistoryModal();
-        });
-      };
-      reader.readAsDataURL(fileInput.files[0]);
-    }
-
-    function openWithdrawModal() { document.getElementById('withdraw-modal').classList.remove('hidden'); }
-
-    function submitWithdraw() {
-      const method = document.getElementById('wd-method').value;
-      const userPayPhone = document.getElementById('wd-user-phone').value;
-      const amount = parseFloat(document.getElementById('wd-amount').value);
-
-      fetch('/api/transaction/withdraw-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: currentUser.phone, method, amount, userPayPhone })
+        document.getElementById('tx-history-modal')
+          .classList.remove('hidden');
       })
-      .then(r => r.json())
-      .then(data => {
-        showToast(data.message);
-        if (data.success) closeModal('withdraw-modal');
+      .catch(err => {
+        console.error(err);
+        showToast('မှတ်တမ်း ရယူ၍ မရပါ');
       });
     }
 
-    function openBetModal(sel) {
-      selectedSelection = sel;
-      document.getElementById('bet-title').textContent = `လောင်းမည်: [ ${sel} ]`;
-      document.getElementById('bet-modal').classList.remove('hidden');
+    function openBetModal(selection) {
+      if (!currentUser) {
+        showToast('အရင် Login ဝင်ပါ');
+        return;
+      }
+
+      selectedSelection = selection;
+
+      document.getElementById('bet-title').textContent =
+        'လောင်းမည်: [ ' + selection + ' ]';
+
+      document.getElementById('bet-modal')
+        .classList.remove('hidden');
     }
 
     function submitBet() {
-      const amt = parseFloat(document.getElementById('bet-amount').value);
+      if (!currentUser) {
+        showToast('အရင် Login ဝင်ပါ');
+        return;
+      }
+
+      const amount =
+        parseFloat(
+          document.getElementById('bet-amount').value
+        );
+
+      if (!amount || amount <= 0) {
+        showToast('လောင်းကြေးပမာဏ မှားယွင်းနေသည်');
+        return;
+      }
+
       fetch('/api/bet', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: currentUser.phone, selection: selectedSelection, amount: amt })
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          phone: currentUser.phone,
+          selection: selectedSelection,
+          amount: amount
+        })
       })
       .then(r => r.json())
       .then(data => {
         if (data.success) {
           updateBalanceDisplay(data.newBalance);
-          showToast("လောင်းကြေး တင်ပြီးပါပြီ");
+
+          showToast('လောင်းကြေး တင်ပြီးပါပြီ');
+
           closeModal('bet-modal');
-        } else showToast(data.message);
+        } else {
+          showToast(
+            data.message || 'လောင်းကြေးတင်၍ မရပါ'
+          );
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        showToast('Server နှင့် ချိတ်ဆက်၍ မရပါ');
       });
     }
 
-    function loadHistory() {
-      fetch('/api/history').then(r => r.json()).then(rows => {
-        const tbody = document.getElementById('history-rows');
-        tbody.innerHTML = '';
-        rows.forEach(r => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${r.period}</td><td><b>${r.number}</b></td><td>${r.bigSmall}</td><td>${r.color}</td>`;
-          tbody.appendChild(tr);
-        });
-      });
-    }
+    socket.on('bet_result_' + (
+      currentUser ? currentUser.phone : ''
+    ), (res) => {
+      if (!res) return;
 
-    function switchTab(tab) {
-      document.getElementById('page-game').classList.toggle('hidden', tab !== 'game');
-      document.getElementById('page-profile').classList.toggle('hidden', tab !== 'profile');
-      
-      const navGame = document.getElementById('nav-game');
-      const navProfile = document.getElementById('nav-profile');
-      
-      if (tab === 'game') {
-        navGame.classList.add('active');
-        navProfile.classList.remove('active');
+      if (res.status === 'WIN') {
+        document.getElementById('win-modal-amount')
+          .textContent =
+          Number(res.winAmount || 0).toLocaleString();
+
+        document.getElementById('win-modal-period')
+          .textContent = res.period || '--';
+
+        document.getElementById('win-badge-color')
+          .textContent = res.color || '--';
+
+        document.getElementById('win-badge-num')
+          .textContent = res.winningNum ?? '--';
+
+        document.getElementById('win-badge-bs')
+          .textContent = res.bs || '--';
+
+        document.getElementById('win-modal')
+          .classList.remove('hidden');
       } else {
-        navProfile.classList.add('active');
-        navGame.classList.remove('active');
+        showToast(
+          `ပွဲစဉ် [${res.period || '--'}] တွင် မကံကောင်းသေးပါ`
+        );
       }
-    }
-
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-    function logout() { localStorage.removeItem('user_phone'); location.reload(); }
-
-    socket.on('timer_tick', (data) => {
-      document.getElementById('period-text').textContent = data.period;
-      document.getElementById('timer-display').textContent = `00:${data.timeLeft < 10 ? '0' + data.timeLeft : data.timeLeft}`;
-    });
-
-    socket.on('new_game_result', () => {
-      loadHistory();
-      if (currentUser) fetch(`/api/user/${currentUser.phone}`).then(r => r.json()).then(d => updateBalanceDisplay(d.user.balance));
     });
 
     checkAutoLogin();
   </script>
+
 </body>
 </html>
