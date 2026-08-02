@@ -1,1 +1,62 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CK Lottery - Admin Control</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: #0b0f19; color: #fff; padding: 20px; display: flex; justify-content: center; }
+    .admin-card { background: #151d30; width: 100%; max-width: 420px; padding: 20px; border-radius: 16px; border: 1px solid #2a3756; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    h2 { color: #f59e0b; font-size: 20px; margin-bottom: 15px; text-align: center; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
+    input { width: 100%; padding: 12px; background: #0b0f19; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 16px; text-align: center; }
+    button { width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    button:hover { background: #059669; }
+    .note { font-size: 11px; color: #64748b; margin-top: 10px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <div class="admin-card">
+    <h2>👑 Admin Control Panel</h2>
+
+    <div class="form-group">
+      <label>နောက်တစ်ကြိမ် ထွက်စေချင်သည့် ဂဏန်း (0 မှ 9 ထိ)</label>
+      <input type="number" id="forced-num" min="0" max="9" placeholder="ဥပမာ - 7" />
+    </div>
+
+    <button onclick="setNextNumber()">ဂဏန်း သတ်မှတ်မည်</button>
+
+    <div class="note">
+      * ဂဏန်း ထည့်ပြီးပါက နောက်တစ်ကြိမ် ဂိမ်းအတိုင်တွင် ထိုဂဏန်းအတိုင်း အတည်ပြု ထွက်ပေးပါမည်။
+    </div>
+  </div>
+
+  <script>
+    function setNextNumber() {
+      const numInput = document.getElementById('forced-num');
+      const val = numInput.value;
+
+      if (val === '' || val < 0 || val > 9) {
+        alert('ကျေးဇူးပြု၍ 0 မှ 9 ကြား ဂဏန်းတစ်ခုခု ရိုက်ထည့်ပါ');
+        return;
+      }
+
+      fetch('/api/admin/set-next-number', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: val })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+        numInput.value = ''; // Reset Input
+      })
+      .catch(err => alert('Error ဖြစ်သွားပါသည်'));
+    }
+  </script>
+</body>
+</html>
 
