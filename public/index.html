@@ -53,7 +53,7 @@
     .profile-avatar { width: 64px; height: 64px; background: linear-gradient(135deg, #f97316, #ef4444); border-radius: 50%; margin: 0 auto 12px; display: flex; justify-content: center; align-items: center; font-size: 28px; }
     .profile-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
 
-    /* Grand Win Popup Style (Match Screenshot) */
+    /* Grand Win Popup Style */
     .win-modal-card { background: linear-gradient(180deg, #ff7e5f 0%, #feb47b 100%); border-radius: 28px; padding: 24px 16px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.8); position: relative; border: 2px solid #ffeccc; }
     .win-rocket { font-size: 50px; margin-bottom: -10px; animation: bounce 1s infinite alternate; }
     .win-title { font-size: 22px; font-weight: 900; color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.3); margin-bottom: 12px; }
@@ -64,6 +64,15 @@
     @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
 
     .tx-item { background: #111827; padding: 12px; border-radius: 12px; border: 1px solid #1f2937; margin-bottom: 10px; text-align: left; font-size: 13px; }
+
+    /* Clickable Text / Button Fix */
+    .clickable-text {
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      display: inline-block;
+      padding: 8px 12px;
+    }
   </style>
 </head>
 <body>
@@ -161,7 +170,7 @@
     </div>
   </div>
 
-  <!-- Win Result Modal (Grand Style) -->
+  <!-- Win Result Modal -->
   <div id="win-modal" class="modal hidden">
     <div class="win-modal-card">
       <div class="win-rocket">🚀</div>
@@ -197,7 +206,7 @@
     </div>
   </div>
 
-  <!-- Transaction History Modal (With Receipt Upload) -->
+  <!-- Transaction History Modal -->
   <div id="tx-history-modal" class="modal hidden">
     <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
       <h3 style="color: #f59e0b; margin-bottom: 12px;">ငွေသွင်း/ငွေထုတ် မှတ်တမ်း</h3>
@@ -231,85 +240,23 @@
     </div>
   </div>
 
-  <!-- Auth Modal -->
+  <!-- Auth Modal (Login / Register) -->
   <div id="auth-modal" class="modal">
     <div class="modal-content">
       <h2 id="auth-title" style="color: #f97316; margin-bottom: 8px;">Login ဝင်မည်</h2>
       <input type="text" id="auth-phone" placeholder="ဖုန်းနံပါတ်">
       <input type="password" id="auth-pass" placeholder="စကားဝှက်">
       <button class="btn-confirm btn-press" id="auth-submit-btn" onclick="handleAuth()">Login ဝင်မည်</button>
+      
+      <!-- ပြင်ဆင်ပြီးသား Toggle Button -->
       <div style="margin-top: 14px;">
-        <span style="color: #6366f1; font-size: 13px;" class="btn-press" onclick="toggleAuthMode()">အကောင့်အသစ်ဖွင့်မည်</span>
+        <button type="button" class="clickable-text" style="background: none; border: none; color: #6366f1; font-size: 14px; font-weight: bold;" onclick="toggleAuthMode()">
+          <span id="auth-toggle-text">အကောင့်အသစ်ဖွင့်မည်</span>
+        </button>
       </div>
     </div>
   </div>
 
-  <script>
-    const socket = io();
-
-    function checkAdminSession() {
-      if (localStorage.getItem('admin_token') === 'ADMIN_SECRET_SESSION_TOKEN') {
-        document.getElementById('admin-login-modal').classList.add('hidden');
-        document.getElementById('admin-panel').classList.remove('hidden');
-        loadUsers();
-        loadPendingTransactions();
-        loadUpcomingPeriods();
-      }
-    }
-
-    function adminLogin() {
-      fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: document.getElementById('admin-phone').value, password: document.getElementById('admin-pass').value })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          localStorage.setItem('admin_token', data.token);
-          checkAdminSession();
-        } else alert(data.message);
-      });
-    }
-
-    function adminLogout() {
-      localStorage.removeItem('admin_token');
-      location.reload();
-    }
-
-    function loadUpcomingPeriods() {
-      fetch('/api/admin/upcoming-periods')
-        .then(r => r.json())
-        .then(d => {
-          if (d.success) {
-            const dropdown = document.getElementById('period-dropdown');
-            dropdown.innerHTML = '';
-            d.periods.forEach((p, idx) => {
-              const opt = document.createElement('option');
-              opt.value = p;
-              opt.textContent = idx === 0 ? `[လက်ရှိပွဲစဉ်] - ${p}` : `[နောက်ပွဲစဉ် ${idx}] - ${p}`;
-              dropdown.appendChild(opt);
-            });
-          }
-        });
-    }
-
-    function setPeriodResult() {
-      const period = document.getElementById('period-dropdown').value;
-      const number = document.getElementById('target-number').value;
-
-      fetch('/api/admin/set-period-result', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ period, number })
-      })
-      .then(r => r.json())
-      .then(d => alert(d.message));
-    }
-
-    function loadPendingTransactions() {
-      fetch('/api/admin/pending-transactions').then(r => r.json()).then(rows => {
-        
   <script>
     const socket = io();
     let currentUser = null;
@@ -334,18 +281,21 @@
       }
     }
 
-    // Register / Login ပြောင်းလဲသည့် Function
+    // Register / Login toggle ပြုလုပ်ပေးမည့် ပြင်ဆင်ပြီးသား Function
     function toggleAuthMode() {
       isRegisterMode = !isRegisterMode;
       const title = document.getElementById('auth-title');
       const submitBtn = document.getElementById('auth-submit-btn');
+      const toggleText = document.getElementById('auth-toggle-text');
 
       if (isRegisterMode) {
         title.textContent = "အကောင့်အသစ်ဖွင့်မည်";
         submitBtn.textContent = "Register ပြုလုပ်မည်";
+        toggleText.textContent = "အကောင့်ရှိပြီးသားပါ (Login ဝင်မည်)";
       } else {
         title.textContent = "Login ဝင်မည်";
         submitBtn.textContent = "Login ဝင်မည်";
+        toggleText.textContent = "အကောင့်အသစ်ဖွင့်မည်";
       }
     }
 
@@ -446,145 +396,4 @@
             let actionArea = '';
 
             if (tx.status === 'PENDING_ADMIN_NUMBER') {
-              actionArea = `<div style="color:#fbbf24; margin-top:4px;">⏳ Admin ဖုန်းနံပါတ် ပို့ပေးသည်အထိ ခဏစောင့်ပါ...</div>`;
-            } else if (tx.status === 'WAITING_USER_PAY') {
-              actionArea = `
-                <div style="background:#1e293b; padding:8px; border-radius:8px; margin:6px 0;">
-                  <div style="color:#10b981; font-weight:bold;">လွှဲရမည့်နံပါတ်: ${tx.admin_pay_number}</div>
-                  <input type="text" id="pay-phone-${tx.id}" placeholder="သင့်ဖုန်းနံပါတ်" style="margin-top:6px;">
-                  <input type="file" id="receipt-file-${tx.id}" accept="image/*" style="margin-top:4px;">
-                  <button class="btn-confirm btn-press" style="padding:8px; font-size:13px;" onclick="uploadReceipt(${tx.id})">ပြေစာတင်မည် (Confirm)</button>
-                </div>
-              `;
-            } else if (tx.status === 'PENDING_APPROVAL') {
-              actionArea = `<div style="color:#38bdf8; margin-top:4px;">⏳ Admin ခွင့်ပြုချက် စောင့်ဆိုင်းနေပါသည်...</div>`;
-            } else if (tx.status === 'APPROVED') {
-              actionArea = `<div style="color:#10b981; font-weight:bold; margin-top:4px;">✅ အောင်မြင်ပါသည်</div>`;
-            } else {
-              actionArea = `<div style="color:#ef4444; font-weight:bold; margin-top:4px;">❌ ငြင်းပယ်ခံရသည်</div>`;
-            }
-
-            div.innerHTML = `
-              <div style="display:flex; justify-content:space-between;">
-                <b>${tx.type} (${tx.method})</b>
-                <span style="color:#fbbf24; font-weight:bold;">K${tx.amount.toLocaleString()}</span>
-              </div>
-              ${actionArea}
-            `;
-            list.appendChild(div);
-          });
-
-          document.getElementById('tx-history-modal').classList.remove('hidden');
-        });
-    }
-
-    function uploadReceipt(txId) {
-      const userPayPhone = document.getElementById(`pay-phone-${txId}`).value;
-      const fileInput = document.getElementById(`receipt-file-${txId}`);
-
-      if (!fileInput.files || fileInput.files.length === 0) return showToast("ပြေစာ ပုံ ထည့်သွင်းပေးပါ");
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const base64Image = e.target.result;
-        fetch('/api/transaction/upload-receipt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ txId, receiptImg: base64Image, userPayPhone })
-        })
-        .then(r => r.json())
-        .then(d => {
-          showToast(d.message);
-          openTxHistoryModal();
-        });
-      };
-      reader.readAsDataURL(fileInput.files[0]);
-    }
-
-    function openWithdrawModal() { document.getElementById('withdraw-modal').classList.remove('hidden'); }
-
-    function submitWithdraw() {
-      const method = document.getElementById('wd-method').value;
-      const userPayPhone = document.getElementById('wd-user-phone').value;
-      const amount = parseFloat(document.getElementById('wd-amount').value);
-
-      fetch('/api/transaction/withdraw-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: currentUser.phone, method, amount, userPayPhone })
-      })
-      .then(r => r.json())
-      .then(data => {
-        showToast(data.message);
-        if (data.success) closeModal('withdraw-modal');
-      });
-    }
-
-    function openBetModal(sel) {
-      selectedSelection = sel;
-      document.getElementById('bet-title').textContent = `လောင်းမည်: [ ${sel} ]`;
-      document.getElementById('bet-modal').classList.remove('hidden');
-    }
-
-    function submitBet() {
-      const amt = parseFloat(document.getElementById('bet-amount').value);
-      fetch('/api/bet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: currentUser.phone, selection: selectedSelection, amount: amt })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          updateBalanceDisplay(data.newBalance);
-          showToast("လောင်းကြေး တင်ပြီးပါပြီ");
-          closeModal('bet-modal');
-        } else showToast(data.message);
-      });
-    }
-
-    function loadHistory() {
-      fetch('/api/history').then(r => r.json()).then(rows => {
-        const tbody = document.getElementById('history-rows');
-        tbody.innerHTML = '';
-        rows.forEach(r => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${r.period}</td><td><b>${r.number}</b></td><td>${r.bigSmall}</td><td>${r.color}</td>`;
-          tbody.appendChild(tr);
-        });
-      });
-    }
-
-    function switchTab(tab) {
-      document.getElementById('page-game').classList.toggle('hidden', tab !== 'game');
-      document.getElementById('page-profile').classList.toggle('hidden', tab !== 'profile');
-      
-      const navGame = document.getElementById('nav-game');
-      const navProfile = document.getElementById('nav-profile');
-      
-      if (tab === 'game') {
-        navGame.classList.add('active');
-        navProfile.classList.remove('active');
-      } else {
-        navProfile.classList.add('active');
-        navGame.classList.remove('active');
-      }
-    }
-
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-    function logout() { localStorage.removeItem('user_phone'); location.reload(); }
-
-    socket.on('timer_tick', (data) => {
-      document.getElementById('period-text').textContent = data.period;
-      document.getElementById('timer-display').textContent = `00:${data.timeLeft < 10 ? '0' + data.timeLeft : data.timeLeft}`;
-    });
-
-    socket.on('new_game_result', () => {
-      loadHistory();
-      if (currentUser) fetch(`/api/user/${currentUser.phone}`).then(r => r.json()).then(d => updateBalanceDisplay(d.user.balance));
-    });
-
-    checkAutoLogin();
-  </script>
-</body>
-</html>
+              actionArea = `<div st
