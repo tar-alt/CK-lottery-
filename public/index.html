@@ -3,240 +3,265 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CK Lottery 1Min Game</title>
+  <title>CK VIP Lottery</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-    body { background-color: #0b1528; display: flex; justify-content: center; min-height: 100vh; }
-    .app-container { width: 100%; max-width: 480px; background-color: #111c30; color: #fff; padding: 12px; position: relative; }
-    
-    /* Header & Wallet */
-    .header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #1e2c47; border-radius: 10px; margin-bottom: 12px; }
-    .brand-title { font-size: 16px; font-weight: bold; color: #38bdf8; }
-    .wallet-actions { display: flex; gap: 6px; align-items: center; }
-    .btn-wallet { border: none; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
-    .dep { background: #10b981; } .wth { background: #ef4444; }
-    .user-wallet { background: #0f172a; padding: 6px 10px; border-radius: 6px; font-weight: bold; color: #f59e0b; font-size: 13px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    body { background: #080e18; color: #fff; display: flex; justify-content: center; min-height: 100vh; }
+    .app { width: 100%; max-width: 450px; background: #0f172a; padding: 12px; position: relative; padding-bottom: 60px; }
 
-    /* Game Card */
-    .game-card { background: linear-gradient(135deg, #1d4ed8, #2563eb); border-radius: 14px; padding: 14px; display: flex; justify-content: space-between; margin-bottom: 15px; }
-    .recent-balls { display: flex; gap: 4px; margin-top: 6px; }
-    .ball { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 11px; color: white; }
-    .timer-display { display: flex; gap: 2px; justify-content: flex-end; align-items: center; margin: 4px 0; }
-    .time-box { background: #000; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 16px; }
-    .period-text { font-size: 11px; opacity: 0.85; text-align: right; }
+    /* Top Bar */
+    .top-bar { display: flex; justify-content: space-between; align-items: center; background: linear-gradient(90deg, #1e293b, #334155); padding: 10px 14px; border-radius: 12px; border: 1px solid #475569; }
+    .logo { font-size: 18px; font-weight: 900; background: linear-gradient(to right, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .wallet-box { background: #020617; border: 1px solid #f59e0b; padding: 4px 10px; border-radius: 20px; color: #f59e0b; font-weight: bold; font-size: 14px; }
+    .btn-action { border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; color: #fff; }
+    .btn-dep { background: #10b981; } .btn-wth { background: #f43f5e; }
 
-    /* Betting Controls */
-    .betting-area { position: relative; background: #1a273e; padding: 14px; border-radius: 12px; margin-bottom: 15px; }
-    .color-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-    .btn-action { border: none; color: white; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-    .btn-green, .green { background: #10b981; } .btn-violet, .violet { background: #8b5cf6; } .btn-red, .red { background: #ef4444; }
-    .red-violet { background: linear-gradient(135deg, #ef4444 50%, #8b5cf6 50%); }
-    .green-violet { background: linear-gradient(135deg, #10b981 50%, #8b5cf6 50%); }
-    .number-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; justify-items: center; margin-bottom: 14px; }
-    .num-ball { width: 45px; height: 45px; border-radius: 50%; border: none; color: white; font-size: 18px; font-weight: bold; cursor: pointer; }
-    .big-small-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .btn-bs { padding: 10px; border: none; border-radius: 20px; font-weight: bold; color: white; cursor: pointer; }
-    .btn-big { background: #f59e0b; } .btn-small { background: #3b82f6; }
+    /* Main Timer Banner */
+    .banner { background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 16px; padding: 15px; margin: 12px 0; box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3); display: flex; justify-content: space-between; align-items: center; }
+    .timer-num { font-size: 26px; font-weight: 900; background: #000; padding: 4px 10px; border-radius: 8px; letter-spacing: 2px; border: 1px solid #a855f7; }
 
-    /* History Table */
-    .history-section { background: #1a273e; border-radius: 12px; padding: 12px; }
-    .history-title { font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #94a3b8; }
+    /* Active Bet Card */
+    .active-bet-card { background: #1e293b; border-left: 4px solid #f59e0b; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+
+    /* Betting Panel */
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .btn-color { padding: 12px; border: none; border-radius: 10px; font-weight: bold; font-size: 14px; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .bg-green { background: linear-gradient(135deg, #10b981, #059669); }
+    .bg-violet { background: linear-gradient(135deg, #a855f7, #7c3aed); }
+    .bg-red { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+
+    .num-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 12px; }
+    .num-btn { width: 100%; height: 50px; border-radius: 50%; border: none; color: #fff; font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+    .btn-bs { padding: 12px; border: none; border-radius: 25px; font-weight: bold; font-size: 15px; color: #fff; cursor: pointer; }
+    .bg-big { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .bg-small { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+
+    /* Table */
+    .history-card { background: #1e293b; border-radius: 12px; padding: 12px; }
     .history-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; }
-    .history-table th { background: #0f172a; padding: 8px; color: #cbd5e1; }
+    .history-table th { color: #94a3b8; padding: 8px; border-bottom: 1px solid #334155; }
     .history-table td { padding: 8px; border-bottom: 1px solid #334155; }
 
-    /* Modals */
-    .modal { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-    .modal-box { background: #1e293b; width: 85%; max-width: 350px; padding: 20px; border-radius: 12px; text-align: center; }
-    .input-field input { width: 100%; padding: 10px; margin: 10px 0; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 6px; }
-    .modal-buttons { display: flex; gap: 10px; }
-    .btn-close, .btn-submit { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-    .btn-close { background: #64748b; color: white; } .btn-submit { background: #10b981; color: white; }
+    /* Popups & Overlay */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 999; }
+    .modal { background: #1e293b; padding: 20px; border-radius: 16px; width: 85%; max-width: 320px; text-align: center; border: 1px solid #475569; }
+    .modal input { width: 100%; padding: 10px; margin: 12px 0; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 8px; text-align: center; font-size: 16px; }
+    
+    /* Result Popup Animations */
+    .result-card { padding: 25px; border-radius: 20px; text-align: center; animation: pop 0.4s ease-out; width: 280px; }
+    .result-win { background: linear-gradient(135deg, #065f46, #10b981); border: 2px solid #34d399; }
+    .result-lose { background: linear-gradient(135deg, #881337, #f43f5e); border: 2px solid #fda4af; }
+    @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-    /* Lock Overlay */
-    .lock-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.9); display: flex; justify-content: center; align-items: center; border-radius: 12px; z-index: 10; font-weight: bold; }
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <div class="app-container">
-    <!-- Header -->
-    <header class="header">
-      <div class="brand-title">CKLOTTERY</div>
-      <div class="wallet-actions">
-        <button class="btn-wallet dep" onclick="openTxModal('Deposit')">သွင်း</button>
-        <button class="btn-wallet wth" onclick="openTxModal('Withdraw')">ထုတ်</button>
-        <div class="user-wallet">K<span id="user-balance">10,000.00</span></div>
-      </div>
-    </header>
-
-    <!-- Game Banner -->
-    <div class="game-card">
-      <div>
-        <div style="font-size: 13px;">Win Go 1Min</div>
-        <div class="recent-balls" id="recent-balls-preview"></div>
-      </div>
-      <div>
-        <div style="font-size: 11px; text-align: right;">ဝယ်ရန်ကျန်ချိန်</div>
-        <div class="timer-display">
-          <span class="time-box">0</span><span class="time-box">0</span> : <span class="time-box" id="t-sec-1">0</span><span class="time-box" id="t-sec-2">0</span>
-        </div>
-        <div class="period-text" id="period-id">---</div>
+  <div class="app">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="logo"><i class="fa-solid fa-crown"></i> CKLOTTERY</div>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <button class="btn-action btn-dep" onclick="openTxModal('Deposit')">သွင်း</button>
+        <button class="btn-action btn-wth" onclick="openTxModal('Withdraw')">ထုတ်</button>
+        <div class="wallet-box">K<span id="balance">10,000</span></div>
       </div>
     </div>
 
-    <!-- Betting Options -->
-    <div class="betting-area">
-      <div class="lock-overlay hidden" id="lock-overlay">လောင်းကြေး ပိတ်ထားပါသည်</div>
-
-      <div class="color-row">
-        <button class="btn-action btn-green" onclick="openBetModal('အစိမ်းရောင်', 'Green', 2)">အစိမ်းရောင်</button>
-        <button class="btn-action btn-violet" onclick="openBetModal('ခရမ်းရောင်', 'Violet', 4.5)">ခရမ်းရောင်</button>
-        <button class="btn-action btn-red" onclick="openBetModal('အနီရောင်', 'Red', 2)">အနီရောင်</button>
+    <!-- Timer Banner -->
+    <div class="banner">
+      <div>
+        <div style="font-size: 12px; opacity: 0.8;">Win Go 1Min</div>
+        <div style="font-size: 11px; margin-top: 4px;" id="period-text">---</div>
       </div>
-
-      <div class="number-grid">
-        <button class="num-ball red-violet" onclick="openBetModal('0', '0', 9)">0</button>
-        <button class="num-ball green" onclick="openBetModal('1', '1', 9)">1</button>
-        <button class="num-ball red" onclick="openBetModal('2', '2', 9)">2</button>
-        <button class="num-ball green" onclick="openBetModal('3', '3', 9)">3</button>
-        <button class="num-ball red" onclick="openBetModal('4', '4', 9)">4</button>
-        <button class="num-ball green-violet" onclick="openBetModal('5', '5', 9)">5</button>
-        <button class="num-ball red" onclick="openBetModal('6', '6', 9)">6</button>
-        <button class="num-ball green" onclick="openBetModal('7', '7', 9)">7</button>
-        <button class="num-ball red" onclick="openBetModal('8', '8', 9)">8</button>
-        <button class="num-ball green" onclick="openBetModal('9', '9', 9)">9</button>
-      </div>
-
-      <div class="big-small-row">
-        <button class="btn-bs btn-big" onclick="openBetModal('အကြီး', 'Big', 2)">အကြီး (5-9)</button>
-        <button class="btn-bs btn-small" onclick="openBetModal('အသေး', 'Small', 2)">အသေး (0-4)</button>
-      </div>
+      <div class="timer-num" id="timer-display">00:00</div>
     </div>
 
-    <!-- Global History Table -->
-    <div class="history-section">
-      <div class="history-title"><i class="fa-solid fa-clock-rotate-left"></i> ထွက်ဂဏန်း မှတ်တမ်း (Global Sync)</div>
+    <!-- Current Bet Tracker -->
+    <div class="active-bet-card hidden" id="bet-tracker">
+      <i class="fa-solid fa-dice"></i> လောင်းထားသော စာရင်း: <strong id="tracked-selection" style="color:#f59e0b;">-</strong> | ပမာဏ: <strong id="tracked-amount" style="color:#10b981;">0</strong> ကျပ်
+    </div>
+
+    <!-- Betting Buttons -->
+    <div class="grid-3">
+      <button class="btn-color bg-green" onclick="openBetModal('အစိမ်းရောင်')">အစိမ်း</button>
+      <button class="btn-color bg-violet" onclick="openBetModal('ခရမ်းရောင်')">ခရမ်း</button>
+      <button class="btn-color bg-red" onclick="openBetModal('အနီရောင်')">အနီ</button>
+    </div>
+
+    <div class="num-grid">
+      <button class="num-btn bg-violet" onclick="openBetModal('0')">0</button>
+      <button class="num-btn bg-green" onclick="openBetModal('1')">1</button>
+      <button class="num-btn bg-red" onclick="openBetModal('2')">2</button>
+      <button class="num-btn bg-green" onclick="openBetModal('3')">3</button>
+      <button class="num-btn bg-red" onclick="openBetModal('4')">4</button>
+      <button class="num-btn bg-violet" onclick="openBetModal('5')">5</button>
+      <button class="num-btn bg-red" onclick="openBetModal('6')">6</button>
+      <button class="num-btn bg-green" onclick="openBetModal('7')">7</button>
+      <button class="num-btn bg-red" onclick="openBetModal('8')">8</button>
+      <button class="num-btn bg-green" onclick="openBetModal('9')">9</button>
+    </div>
+
+    <div class="grid-2">
+      <button class="btn-bs bg-big" onclick="openBetModal('အကြီး')">အကြီး (5-9)</button>
+      <button class="btn-bs bg-small" onclick="openBetModal('အသေး')">အသေး (0-4)</button>
+    </div>
+
+    <!-- History -->
+    <div class="history-card">
+      <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px; color:#cbd5e1;">ထွက်ဂဏန်း မှတ်တမ်း</div>
       <table class="history-table">
         <thead>
-          <tr>
-            <th>ပွဲအမှတ်စဉ်</th>
-            <th>ဂဏန်း</th>
-            <th>အသေး/အကြီး</th>
-            <th>အရောင်</th>
-          </tr>
+          <tr><th>ပွဲစဉ်</th><th>ဂဏန်း</th><th>အသေး/အကြီး</th><th>အရောင်</th></tr>
         </thead>
-        <tbody id="history-list"></tbody>
+        <tbody id="history-rows"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- Deposit/Withdraw Modal -->
-  <div class="modal hidden" id="tx-modal">
-    <div class="modal-box">
-      <h3 id="tx-modal-title">ငွေသွင်းမည်</h3>
-      <div class="input-field">
-        <input type="number" id="tx-amount" value="5000" min="1000" />
-      </div>
-      <div class="modal-buttons">
-        <button class="btn-close" onclick="closeTxModal()">မလုပ်တော့ပါ</button>
-        <button class="btn-submit" onclick="submitTransaction()">အတည်ပြုမည်</button>
+  <!-- Bet Confirmation Modal -->
+  <div class="overlay hidden" id="bet-modal">
+    <div class="modal">
+      <h3 id="bet-title" style="color:#f59e0b;">လောင်းကြေးထပ်မည်</h3>
+      <input type="number" id="bet-amount" value="1000" min="100" />
+      <div style="display:flex; gap: 8px;">
+        <button class="btn-action bg-red" style="flex:1; padding:10px;" onclick="closeModal('bet-modal')">မလုပ်တော့ပါ</button>
+        <button class="btn-action bg-green" style="flex:1; padding:10px;" onclick="submitBet()">အတည်ပြုမည်</button>
       </div>
     </div>
   </div>
 
-  <!-- Bet Confirmation Modal -->
-  <div class="modal hidden" id="bet-modal">
-    <div class="modal-box">
-      <h3 id="modal-title">လောင်းကြေးထပ်မည်</h3>
-      <div class="input-field">
-        <input type="number" id="bet-amount" value="1000" step="500" min="100" />
-      </div>
-      <div class="modal-buttons">
-        <button class="btn-close" onclick="closeBetModal()">မလုပ်တော့ပါ</button>
-        <button class="btn-submit" onclick="confirmBet()">အတည်ပြုမည်</button>
+  <!-- Win/Lose Animation Result Popup -->
+  <div class="overlay hidden" id="result-modal">
+    <div class="result-card" id="result-card-bg">
+      <h1 id="result-status-text" style="font-size: 36px; margin-bottom: 8px;">WIN</h1>
+      <p id="result-detail-text" style="font-size: 14px; opacity: 0.9;">ထွက်ဂဏန်း: 5</p>
+      <button class="btn-action bg-green" style="margin-top: 15px; width: 100%; padding: 8px;" onclick="closeModal('result-modal')">ပိတ်မည်</button>
+    </div>
+  </div>
+
+  <!-- Deposit/Withdraw Modal -->
+  <div class="overlay hidden" id="tx-modal">
+    <div class="modal">
+      <h3 id="tx-title">ငွေသွင်းမည်</h3>
+      <input type="number" id="tx-amount" value="5000" />
+      <div style="display:flex; gap: 8px;">
+        <button class="btn-action bg-red" style="flex:1; padding:10px;" onclick="closeModal('tx-modal')">မလုပ်တော့ပါ</button>
+        <button class="btn-action bg-green" style="flex:1; padding:10px;" onclick="submitTx()">တောင်းဆိုမည်</button>
       </div>
     </div>
   </div>
 
   <script>
-    const socket = io();
-    let balance = 10000.00;
-    let currentTxType = 'Deposit';
-    let selectedBet = null;
+    const socket = io(window.location.origin);
+    let userBalance = 10000;
+    let selectedSelection = null;
+    let activeBet = null;
+    let currentPeriod = '';
 
-    // Timer Sync from Server
     socket.on('timer_tick', (data) => {
-      document.getElementById("period-id").textContent = data.period;
-      document.getElementById("t-sec-1").textContent = Math.floor(data.timeLeft / 10);
-      document.getElementById("t-sec-2").textContent = data.timeLeft % 10;
-
-      if (!data.canBet) document.getElementById("lock-overlay").classList.remove("hidden");
-      else document.getElementById("lock-overlay").classList.add("hidden");
+      currentPeriod = data.period;
+      document.getElementById('period-text').textContent = data.period;
+      const s = data.timeLeft < 10 ? '0' + data.timeLeft : data.timeLeft;
+      document.getElementById('timer-display').textContent = `00:${s}`;
     });
 
-    // Real-time Result Broadcast to ALL Clients
     socket.on('new_game_result', (data) => {
       addHistoryRow(data.period, data.number, data.bigSmall, data.color);
+      
+      // Check Win/Lose if user placed a bet
+      if (activeBet && activeBet.period === data.period) {
+        let isWin = false;
+        if (activeBet.selection === 'အကြီး' && data.number >= 5) isWin = true;
+        else if (activeBet.selection === 'အသေး' && data.number < 5) isWin = true;
+        else if (activeBet.selection === data.number.toString()) isWin = true;
+        else if (data.color.includes(activeBet.selection.replace('ရောင်', ''))) isWin = true;
+
+        showResultPopup(isWin, data.number);
+        if (isWin) {
+          userBalance += activeBet.amount * 2;
+          document.getElementById('balance').textContent = userBalance.toLocaleString();
+        }
+        activeBet = null;
+        document.getElementById('bet-tracker').classList.add('hidden');
+      }
     });
 
-    // Fetch Initial DB History
-    window.onload = () => {
-      fetch('/api/history')
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById("history-list").innerHTML = "";
-          data.forEach(item => addHistoryRow(item.period, item.number, item.big_small, item.color));
-        });
-    };
+    function showResultPopup(isWin, num) {
+      const modal = document.getElementById('result-modal');
+      const bg = document.getElementById('result-card-bg');
+      const status = document.getElementById('result-status-text');
+      const detail = document.getElementById('result-detail-text');
+
+      if (isWin) {
+        bg.className = "result-card result-win";
+        status.textContent = "YOU WIN! 🎉";
+      } else {
+        bg.className = "result-card result-lose";
+        status.textContent = "YOU LOSE 💔";
+      }
+      detail.textContent = `ထွက်ဂဏန်းမှာ [ ${num} ] ဖြစ်ပါသည်`;
+      modal.classList.remove('hidden');
+    }
+
+    function openBetModal(selection) {
+      selectedSelection = selection;
+      document.getElementById('bet-title').textContent = `လောင်းမည်: [ ${selection} ]`;
+      document.getElementById('bet-modal').classList.remove('hidden');
+    }
+
+    function submitBet() {
+      const amt = parseFloat(document.getElementById('bet-amount').value);
+      if (amt > userBalance) return alert("လက်ကျန်ငွေ မလုံလောက်ပါ");
+
+      userBalance -= amt;
+      document.getElementById('balance').textContent = userBalance.toLocaleString();
+
+      activeBet = { period: currentPeriod, selection: selectedSelection, amount: amt };
+      document.getElementById('tracked-selection').textContent = selectedSelection;
+      document.getElementById('tracked-amount').textContent = amt.toLocaleString();
+      document.getElementById('bet-tracker').classList.remove('hidden');
+
+      fetch('/api/bet', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ socketId: socket.id, period: currentPeriod, selection: selectedSelection, amount: amt })
+      });
+
+      closeModal('bet-modal');
+    }
+
+    function openTxModal(type) {
+      document.getElementById('tx-title').textContent = type === 'Deposit' ? 'ငွေသွင်းမည်' : 'ငွေထုတ်မည်';
+      document.getElementById('tx-modal').classList.remove('hidden');
+    }
+
+    function submitTx() {
+      const amt = parseFloat(document.getElementById('tx-amount').value);
+      fetch('/api/transaction', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ type: document.getElementById('tx-title').textContent, amount: amt })
+      }).then(res => res.json()).then(data => { alert(data.message); closeModal('tx-modal'); });
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
     function addHistoryRow(period, num, bs, color) {
-      const tbody = document.getElementById("history-list");
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${period}</td><td><strong>${num}</strong></td><td>${bs}</td><td>${color}</td>`;
+      const tbody = document.getElementById('history-rows');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${period}</td><td><strong style="color:#f59e0b; font-size:14px;">${num}</strong></td><td>${bs}</td><td>${color}</td>`;
       tbody.insertBefore(tr, tbody.firstChild);
       if (tbody.children.length > 10) tbody.removeChild(tbody.lastChild);
     }
 
-    // Modal Control Functions
-    function openTxModal(type) {
-      currentTxType = type;
-      document.getElementById("tx-modal-title").textContent = type === 'Deposit' ? 'ငွေသွင်းမည်' : 'ငွေထုတ်မည်';
-      document.getElementById("tx-modal").classList.remove("hidden");
-    }
-    function closeTxModal() { document.getElementById("tx-modal").classList.add("hidden"); }
-
-    function openBetModal(title, selection, multiplier) {
-      selectedBet = { selection, multiplier };
-      document.getElementById("modal-title").textContent = `လောင်းမည်: [ ${title} ]`;
-      document.getElementById("bet-modal").classList.remove("hidden");
-    }
-    function closeBetModal() { document.getElementById("bet-modal").classList.add("hidden"); }
-
-    function confirmBet() {
-      const amt = parseFloat(document.getElementById("bet-amount").value);
-      if (amt > balance) return alert("လက်ကျန်ငွေ မလုံလောက်ပါ");
-      balance -= amt;
-      document.getElementById("user-balance").textContent = balance.toLocaleString('en-US');
-      alert("လောင်းကြေးထပ်ပြီးပါပြီ");
-      closeBetModal();
-    }
-
-    function submitTransaction() {
-      const amount = parseFloat(document.getElementById("tx-amount").value);
-      fetch('/api/transaction', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: currentTxType, amount })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message);
-        closeTxModal();
-      });
-    }
+    fetch('/api/history').then(res => res.json()).then(data => {
+      data.forEach(item => addHistoryRow(item.period, item.number, item.big_small, item.color));
+    });
   </script>
 </body>
 </html>
