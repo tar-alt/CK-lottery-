@@ -1,7 +1,6 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 const app = express();
@@ -11,52 +10,27 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const db = new sqlite3.Database('./game.db');
-
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS game_history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    period TEXT,
-    number INTEGER,
-    big_small TEXT,
-    color TEXT
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS bets (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    socket_id TEXT,
-    period TEXT,
-    selection TEXT,
-    amount REAL
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS transactions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT,
-    amount REAL,
-    status TEXT DEFAULT 'PENDING'
-  )`);
-});
-
+// Memory Store (Simple & Rock Solid for Free Tier)
 let currentPeriod = 202608020001;
 let timeLeft = 60;
-let forcedResultNumber = null; // Admin Control Override
+let forcedResultNumber = null;
+let gameHistory = [];
+let activeBets = [];
 
 setInterval(() => {
   timeLeft--;
 
   io.emit('timer_tick', {
     period: currentPeriod,
-    timeLeft: timeLeft,
-    canBet: timeLeft > 10
+    timeLeft: timeLeft
   });
 
   if (timeLeft <= 0) {
-    // Determine winner: Admin forced number OR random
+    // Determine winner
     let winningNum;
     if (forcedResultNumber !== null && forcedResultNumber >= 0 && forcedResultNumber <= 9) {
       winningNum = forcedResultNumber;
-      forcedResultNumber = null; // Reset forced number
+      forcedResultNumber = null; // Reset forced
     } else {
       winningNum = Math.floor(Math.random() * 10);
     }
@@ -70,46 +44,49 @@ setInterval(() => {
     else if (winningNum % 2 === 0) colorText = "အနီရောင်";
     else colorText = "အစိမ်းရောင်";
 
-    // Save Game Result
-    db.run(
-      `INSERT INTO game_history (period, number, big_small, color) VALUES (?, ?, ?, ?)`,
-      [currentPeriod, winningNum, bsText, colorText],
-      function (err) {
-        if (!err) {
-          io.emit('new_game_result', {
-            period: currentPeriod,
-            number: winningNum,
-            bigSmall: bsText,
-            color: colorText
-          });
-        }
-      }
-    );
+    const result = {
+      period: currentPeriod,
+      number: winningNum,
+      bigSmall: bsText,
+      color: colorText,
+      bets: activeBets.filter(b => b.period === currentPeriod)
+    };
+
+    gameHistory.unshift(result);
+    if (gameHistory.length > 20) gameHistory.pop();
+
+    io.emit('new_game_result', result);
 
     currentPeriod++;
     timeLeft = 60;
+    activeBets = []; // Reset bets for next round
   }
 }, 1000);
 
-// API Endpoints
+// API Routes
 app.get('/api/history', (req, res) => {
-  db.all(`SELECT period, number, big_small, color FROM game_history ORDER BY id DESC LIMIT 10`, [], (err, rows) => {
-    res.json(rows || []);
-  });
+  res.json(gameHistory);
 });
 
-// Place Bet
 app.post('/api/bet', (req, res) => {
-  const { socketId, period, selection, amount } = req.body;
-  db.run(`INSERT INTO bets (socket_id, period, selection, amount) VALUES (?, ?, ?, ?)`,
-    [socketId, period, selection, amount], (err) => {
-      if (err) return res.status(500).json({ success: false });
-      res.json({ success: true });
-    });
+  const { period, selection, amount } = req.body;
+  activeBets.push({ period, selection, amount });
+  res.json({ success: true });
 });
 
-// Admin Control APIs
+// Admin Route & API
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 app.post('/api/admin/set-next-number', (req, res) => {
+  const { number } = req.body;
+  forcedResultNumber = parseInt(number);
+  res.json({ success: true, message: `နောက်တစ်ကြိမ် ထွက်ဂဏန်းကို [ ${forcedResultNumber} ] ဟု သတ်မှတ်လိုက်ပါပြီ` });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   const { number } = req.body;
   forcedResultNumber = parseInt(number);
   res.json({ success: true, message: `နောက်တစ်ကြိမ်ထွက်ဂဏန်းကို [ ${forcedResultNumber} ] အဖြစ် သတ်မှတ်လိုက်ပါပြီ` });
