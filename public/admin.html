@@ -2,30 +2,45 @@
 <html lang="my">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CK Lottery - Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CK Lottery - Admin Control Center</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-    body { background: #0f172a; color: white; padding: 16px; max-width: 900px; margin: 0 auto; }
+    body { background: #0f172a; color: white; padding: 16px; max-width: 900px; margin: 0 auto; -webkit-overflow-scrolling: touch; }
     
     .card { background: #1e293b; padding: 16px; border-radius: 16px; margin-bottom: 16px; border: 1px solid #334155; }
-    h2 { color: #f59e0b; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; font-size: 20px; }
+    h2 { color: #f59e0b; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; font-size: 18px; }
     h3 { color: #38bdf8; margin-bottom: 12px; font-size: 15px; }
     
-    input, select { padding: 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; outline: none; margin-bottom: 8px; }
-    button { padding: 10px 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: #3b82f6; color: white; }
+    /* Fix Keyboard Input Lock on Mobile */
+    input, select { 
+      padding: 12px; 
+      border-radius: 10px; 
+      border: 1px solid #475569; 
+      background: #0f172a; 
+      color: white; 
+      outline: none; 
+      margin-bottom: 8px; 
+      font-size: 16px; 
+      width: 100%;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    button { padding: 12px 16px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; background: #3b82f6; color: white; font-size: 14px; }
     .btn-danger { background: #ef4444; }
     .btn-success { background: #10b981; }
 
     .table-responsive { width: 100%; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; text-align: left; min-width: 500px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; min-width: 480px; }
     th, td { padding: 10px; border-bottom: 1px solid #334155; font-size: 13px; }
 
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background: #1e293b; padding: 24px; border-radius: 20px; width: 90%; max-width: 360px; text-align: center; }
     .hidden { display: none !important; }
     .stats-box { background: #0f172a; padding: 12px; border-radius: 10px; font-size: 13px; color: #fbbf24; }
+    .receipt-preview { width: 100px; border-radius: 8px; cursor: pointer; border: 1px solid #38bdf8; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -34,8 +49,8 @@
   <div id="admin-login-modal" class="modal">
     <div class="modal-content">
       <h2 style="color: #f59e0b; justify-content: center;">👑 Admin Login</h2>
-      <input type="text" id="admin-phone" placeholder="Admin Phone" style="width: 100%;">
-      <input type="password" id="admin-pass" placeholder="Admin Password" style="width: 100%;">
+      <input type="number" id="admin-phone" placeholder="Admin ဖုန်းနံပါတ်">
+      <input type="password" id="admin-pass" placeholder="စကားဝှက်">
       <button class="btn-success" style="width: 100%;" onclick="adminLogin()">Login ဝင်မည်</button>
     </div>
   </div>
@@ -47,9 +62,9 @@
       <button onclick="adminLogout()" style="background:#475569; font-size:12px;">Logout</button>
     </h2>
 
-    <!-- Live Game & Bet Analytics -->
+    <!-- Realtime Analytics -->
     <div class="card">
-      <h3>📊 လက်ရှိ ပွဲစဉ် လောင်းကြေး အခြေအနေ (Realtime)</h3>
+      <h3>📊 လက်ရှိ ပွဲစဉ် လောင်းကြေး အခြေအနေ</h3>
       <div class="stats-box">
         <div>ပွဲစဉ်: <b id="current-period-text">--</b> | ကျန်ချိန်: <b id="current-time-text">--</b>s</div>
         <div style="margin-top: 6px; font-size: 15px;">စုစုပေါင်း လောင်းကြေး: <b id="grand-total-text" style="color:#10b981;">0</b> ကျပ်</div>
@@ -57,17 +72,32 @@
       </div>
     </div>
 
-    <!-- Targeted Period Forced Result -->
+    <!-- Period Selection Dropdown Result Override -->
     <div class="card">
-      <h3>🎯 ပွဲစဉ်အလိုက် ထွက်ဂဏန်း ကြိုတင်သတ်မှတ်ရန်</h3>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <input type="number" id="target-period" placeholder="ပွဲစဉ်နံပါတ် (Period ID)">
-        <input type="number" id="target-number" min="0" max="9" placeholder="ဂဏန်း (0-9)" style="width: 100px;">
-        <button class="btn-success" onclick="setPeriodResult()">သတ်မှတ်မည်</button>
+      <h3>🎯 ပွဲစဉ်အလိုက် ထွက်ဂဏန်း ကြိုတင် သတ်မှတ်ရန်</h3>
+      <div>
+        <label style="font-size: 12px; color: #9ca3af;">ပွဲစဉ်နံပါတ် ရွေးချယ်ပါ:</label>
+        <select id="period-dropdown"></select>
+        
+        <label style="font-size: 12px; color: #9ca3af;">ထွက်စေလိုသည့် ဂဏန်း (0-9):</label>
+        <select id="target-number">
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+        </select>
+
+        <button class="btn-success" style="width:100%; margin-top:8px;" onclick="setPeriodResult()">ဂဏန်း သတ်မှတ်မည်</button>
       </div>
     </div>
 
-    <!-- Pending Transactions (Deposit / Withdraw Approval) -->
+    <!-- Transactions Requests -->
     <div class="card">
       <h3>💸 ငွေသွင်း/ငွေထုတ် တောင်းဆိုမှုများ</h3>
       <div class="table-responsive">
@@ -78,7 +108,7 @@
               <th>User ဖုန်း</th>
               <th>ပမာဏ</th>
               <th>Method</th>
-              <th>အသေးစိတ် / Action</th>
+              <th>ပြေစာ/Action</th>
             </tr>
           </thead>
           <tbody id="tx-rows"></tbody>
@@ -86,7 +116,7 @@
       </div>
     </div>
 
-    <!-- User Management -->
+    <!-- User Manager -->
     <div class="card">
       <h3>👥 User မန်နေးဂျာ</h3>
       <div class="table-responsive">
@@ -114,6 +144,7 @@
         document.getElementById('admin-panel').classList.remove('hidden');
         loadUsers();
         loadPendingTransactions();
+        loadUpcomingPeriods();
       }
     }
 
@@ -137,10 +168,26 @@
       location.reload();
     }
 
+    function loadUpcomingPeriods() {
+      fetch('/api/admin/upcoming-periods')
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) {
+            const dropdown = document.getElementById('period-dropdown');
+            dropdown.innerHTML = '';
+            d.periods.forEach((p, idx) => {
+              const opt = document.createElement('option');
+              opt.value = p;
+              opt.textContent = idx === 0 ? `[လက်ရှိပွဲစဉ်] - ${p}` : `[နောက်ပွဲစဉ် ${idx}] - ${p}`;
+              dropdown.appendChild(opt);
+            });
+          }
+        });
+    }
+
     function setPeriodResult() {
-      const period = document.getElementById('target-period').value;
+      const period = document.getElementById('period-dropdown').value;
       const number = document.getElementById('target-number').value;
-      if (!period || number === '') return alert("အချက်အလက် ပြည့်စုံအောင် ဖြည့်ပါ");
 
       fetch('/api/admin/set-period-result', {
         method: 'POST',
@@ -161,17 +208,20 @@
 
           if (tx.status === 'PENDING_ADMIN_NUMBER') {
             actionCell = `
-              <input type="text" id="admin-num-${tx.id}" placeholder="ငွေလက်ခံမည့်ဖုန်း" style="width:120px;">
-              <button class="btn-success" onclick="sendDepositNumber(${tx.id})">ပို့မည်</button>
+              <input type="number" id="admin-num-${tx.id}" placeholder="ငွေလက်ခံမည့်ဖုန်း" style="width:140px; margin-bottom:4px;">
+              <button class="btn-success" onclick="sendDepositNumber(${tx.id})">နံပါတ် ပို့မည်</button>
             `;
           } else if (tx.status === 'PENDING_APPROVAL') {
+            let imgHtml = tx.receipt_img ? `<br><a href="${tx.receipt_img}" target="_blank"><img src="${tx.receipt_img}" class="receipt-preview"></a>` : '';
             actionCell = `
-              <div style="font-size:11px; margin-bottom:4px;">လွှဲဖုန်း: ${tx.user_pay_phone || '-'} | TxnID: ${tx.txn_id || '-'}</div>
-              <button class="btn-success" onclick="processTx(${tx.id}, 'APPROVE')">ခွင့်ပြုမည်</button>
-              <button class="btn-danger" onclick="processTx(${tx.id}, 'REJECT')">ငြင်းပယ်မည်</button>
+              <div style="font-size:11px;">လွှဲဖုန်း: ${tx.user_pay_phone || '-'} ${imgHtml}</div>
+              <div style="margin-top:6px;">
+                <button class="btn-success" onclick="processTx(${tx.id}, 'APPROVE')">ခွင့်ပြုမည်</button>
+                <button class="btn-danger" onclick="processTx(${tx.id}, 'REJECT')">ငြင်းပယ်မည်</button>
+              </div>
             `;
           } else {
-            actionCell = `<span style="color:#fbbf24;">User ငွေလွှဲသည်ကို စောင့်နေသည်</span>`;
+            actionCell = `<span style="color:#fbbf24;">User ငွေလွှဲပြေစာ တင်သည်ကို စောင့်နေသည်</span>`;
           }
 
           tr.innerHTML = `
@@ -188,6 +238,8 @@
 
     function sendDepositNumber(txId) {
       const adminPayNumber = document.getElementById(`admin-num-${txId}`).value;
+      if (!adminPayNumber) return alert("ဖုန်းနံပါတ် ဖြည့်သွင်းပါ");
+
       fetch('/api/admin/set-deposit-number', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -254,7 +306,11 @@
       document.getElementById('top-bets-list').innerHTML = summaryHtml || 'လောင်းကြေး မရှိသေးပါ။';
     });
 
-    setInterval(loadPendingTransactions, 5000);
+    socket.on('new_game_result', () => {
+      loadUpcomingPeriods();
+    });
+
+    setInterval(loadPendingTransactions, 4000);
     checkAdminSession();
   </script>
 </body>
