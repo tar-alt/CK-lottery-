@@ -1,1607 +1,231 @@
 <!DOCTYPE html>
 <html lang="my">
-
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CK VIP Lottery - WinGo 1Min</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root {
+      --bg-color: #0b1120;
+      --card-bg: #1e293b;
+      --accent-gold: #f59e0b;
+      --green-btn: #10b981;
+      --purple-btn: #8b5cf6;
+      --red-btn: #ef4444;
+      --blue-btn: #3b82f6;
+    }
 
-<meta charset="UTF-8">
+    body { margin: 0; font-family: Arial, sans-serif; background-color: var(--bg-color); color: #fff; display: flex; justify-content: center; }
+    .app-container { width: 100%; max-width: 480px; min-height: 100vh; background-color: #0f172a; padding: 15px; box-sizing: border-box; }
 
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
->
+    /* Auth Overlay */
+    .auth-overlay { position: fixed; inset: 0; background: rgba(11, 17, 32, 0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .auth-card { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 85%; }
+    .auth-card input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #fff; box-sizing: border-box; }
+    .auth-card button { width: 100%; padding: 12px; background: var(--accent-gold); border: none; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; }
 
-<title>CK Multiplayer Demo</title>
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
+    .balance-box { background: #1e293b; padding: 8px 16px; border-radius: 20px; color: var(--accent-gold); font-weight: bold; }
 
-<script src="/socket.io/socket.io.js"></script>
+    .timer-card { background: linear-gradient(135deg, #4f46e5, #7c3aed); border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .timer-clock { background: #0f172a; padding: 8px 15px; border-radius: 8px; font-size: 24px; font-weight: bold; color: #38bdf8; }
 
-<style>
+    .color-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+    .btn { padding: 15px; border: none; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer; font-size: 16px; }
+    .bg-green { background-color: var(--green-btn); }
+    .bg-purple { background-color: var(--purple-btn); }
+    .bg-red { background-color: var(--red-btn); }
+    .bg-big { background-color: #d97706; }
+    .bg-small { background-color: #2563eb; }
 
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-  font-family:Arial,"Noto Sans Myanmar",sans-serif;
-}
+    .number-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px; }
+    .num-btn { aspect-ratio: 1; border-radius: 8px; border: none; color: white; font-size: 18px; font-weight: bold; cursor: pointer; }
+    .size-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
 
-body{
-  background:#080c15;
-  color:#fff;
-  max-width:480px;
-  margin:auto;
-  min-height:100vh;
-  padding-bottom:85px;
-}
+    /* History Table */
+    .history-card { background: var(--card-bg); border-radius: 10px; padding: 12px; margin-top: 15px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; }
+    th, td { padding: 8px; border-bottom: 1px solid #334155; }
+    th { color: #94a3b8; }
+    .ball { display: inline-block; width: 22px; height: 22px; line-height: 22px; border-radius: 50%; font-weight: bold; color: #fff; }
 
-button,
-input{
-  font:inherit;
-}
-
-button{
-  border:0;
-  cursor:pointer;
-}
-
-.hidden{
-  display:none!important;
-}
-
-/* HEADER */
-
-.header{
-  height:65px;
-  background:#111827;
-  border-bottom:1px solid #273244;
-  padding:0 15px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  position:sticky;
-  top:0;
-  z-index:20;
-}
-
-.logo{
-  color:#f97316;
-  font-size:19px;
-  font-weight:900;
-}
-
-.unit{
-  background:#172033;
-  border:1px solid #374151;
-  border-radius:22px;
-  padding:8px 13px;
-  color:#fbbf24;
-  font-weight:900;
-}
-
-/* CARD */
-
-.card{
-  margin:15px;
-  padding:16px;
-  background:#111827;
-  border:1px solid #273244;
-  border-radius:18px;
-}
-
-.hero{
-  background:
-    linear-gradient(
-      135deg,
-      #1d4ed8,
-      #7e22ce
-    );
-  border:0;
-}
-
-.timer-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-}
-
-.timer{
-  background:#020617;
-  color:#67e8f9;
-  font:900 27px monospace;
-  padding:7px 13px;
-  border-radius:11px;
-}
-
-/* BET */
-
-.grid3{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:9px;
-  margin-bottom:10px;
-}
-
-.grid5{
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:8px;
-  margin-bottom:10px;
-}
-
-.grid2{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:9px;
-}
-
-.bet{
-  color:#fff;
-  padding:14px 5px;
-  border-radius:13px;
-  font-weight:900;
-}
-
-.green{
-  background:#059669;
-}
-
-.red{
-  background:#dc2626;
-}
-
-.purple{
-  background:#7e22ce;
-}
-
-.orange{
-  background:#d97706;
-}
-
-.blue{
-  background:#1d4ed8;
-}
-
-/* HISTORY */
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  text-align:center;
-  font-size:12px;
-}
-
-th,
-td{
-  padding:9px 3px;
-  border-bottom:1px solid #273244;
-}
-
-/* NAV */
-
-.nav{
-  position:fixed;
-  bottom:0;
-  left:50%;
-  transform:translateX(-50%);
-  width:100%;
-  max-width:480px;
-  height:72px;
-  background:#111827;
-  border-top:1px solid #273244;
-  display:flex;
-  z-index:50;
-}
-
-.nav button{
-  flex:1;
-  background:none;
-  color:#8b95a7;
-  font-weight:800;
-}
-
-.nav button.active{
-  color:#f97316;
-}
-
-/* PROFILE */
-
-.profile{
-  text-align:center;
-}
-
-.avatar{
-  width:70px;
-  height:70px;
-  border-radius:50%;
-  margin:0 auto 10px;
-  display:grid;
-  place-items:center;
-  font-size:32px;
-  background:
-    linear-gradient(
-      135deg,
-      #f97316,
-      #ef4444
-    );
-}
-
-.id{
-  margin:12px 0;
-  padding:12px;
-  background:#0b1220;
-  border-radius:12px;
-  border:1px solid #334155;
-  color:#93c5fd;
-}
-
-/* MODAL */
-
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.85);
-  z-index:100;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:16px;
-}
-
-.modalbox{
-  width:100%;
-  max-width:390px;
-  background:#202b3d;
-  border:1px solid #40506a;
-  border-radius:22px;
-  padding:20px;
-  text-align:center;
-}
-
-input{
-  width:100%;
-  padding:13px;
-  margin:6px 0;
-  background:#0d1524;
-  color:#fff;
-  border:1px solid #3b475b;
-  border-radius:11px;
-  outline:none;
-}
-
-.primary{
-  width:100%;
-  padding:13px;
-  margin-top:8px;
-  border-radius:12px;
-  background:
-    linear-gradient(
-      135deg,
-      #f59e0b,
-      #ea580c
-    );
-  color:#fff;
-  font-weight:900;
-}
-
-.secondary{
-  width:100%;
-  padding:11px;
-  background:none;
-  color:#9ca3af;
-}
-
-/* RESULT */
-
-.result-win{
-  background:
-    linear-gradient(
-      180deg,
-      #ff7e5f,
-      #ef4444
-    );
-}
-
-.result-lose{
-  background:
-    linear-gradient(
-      180deg,
-      #334155,
-      #111827
-    );
-}
-
-.trophy{
-  font-size:55px;
-}
-
-.amount{
-  background:#fff;
-  color:#e11d48;
-  padding:14px;
-  border-radius:15px;
-  font-size:28px;
-  font-weight:900;
-  margin:14px 0;
-}
-
-/* ADMIN */
-
-.admin-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.admin-player{
-  background:#0b1220;
-  border:1px solid #273244;
-  border-radius:14px;
-  padding:13px;
-  margin-top:9px;
-}
-
-.admin-actions{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:7px;
-  margin-top:9px;
-}
-
-.admin-actions button{
-  padding:10px;
-  border-radius:10px;
-  color:white;
-  font-weight:800;
-}
-
-.add{
-  background:#059669;
-}
-
-.remove{
-  background:#dc2626;
-}
-
-/* TOAST */
-
-.toast{
-  position:fixed;
-  top:15px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:500;
-  background:#202b3d;
-  border:1px solid #475569;
-  border-radius:12px;
-  padding:12px 18px;
-  font-weight:800;
-  box-shadow:0 10px 30px #000;
-}
-
-</style>
-
+    /* Modal */
+    .popup-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 2000; }
+    .popup-content { background: var(--card-bg); padding: 25px; border-radius: 15px; text-align: center; width: 260px; }
+  </style>
 </head>
-
 <body>
 
-<div id="toast"
-     class="toast hidden">
+<div class="auth-overlay" id="authModal">
+  <div class="auth-card">
+    <h2 style="text-align: center; color: var(--accent-gold);">CK VIP LOTTERY</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">ဝင်ရောက်မည်</button>
+  </div>
 </div>
 
-
-<!-- =====================
-     LOGIN
-===================== -->
-
-<div id="loginPage">
-
-  <div
-    class="modal"
-    style="position:fixed"
-  >
-
-    <div class="modalbox">
-
-      <div
-        style="
-          font-size:38px;
-          margin-bottom:8px;
-        "
-      >
-        👑
-      </div>
-
-      <h2
-        style="color:#f97316"
-      >
-        CKLOTTERY
-      </h2>
-
-      <p
-        style="
-          color:#9ca3af;
-          margin:8px 0 15px;
-        "
-      >
-        Multiplayer Demo
-      </p>
-
-      <input
-        id="loginPhone"
-        placeholder="ဖုန်း / Username"
-      >
-
-      <input
-        id="loginPassword"
-        type="password"
-        placeholder="Password"
-      >
-
-      <button
-        class="primary"
-        onclick="login()"
-      >
-        Login
-      </button>
-
-      <button
-        class="secondary"
-        onclick="showRegister()"
-      >
-        အကောင့်အသစ်ဖွင့်မည်
-      </button>
-
-    </div>
-
+<div class="app-container">
+  <div class="header">
+    <h3 style="color: var(--accent-gold); margin:0;">👑 CKLOTTERY</h3>
+    <div class="balance-box" id="balanceDisplay">K0.00</div>
   </div>
 
-</div>
-
-
-<!-- =====================
-     REGISTER
-===================== -->
-
-<div
-  id="registerPage"
-  class="hidden"
->
-
-  <div
-    class="modal"
-    style="position:fixed"
-  >
-
-    <div class="modalbox">
-
-      <h2
-        style="color:#f97316"
-      >
-        အကောင့်ဖွင့်မည်
-      </h2>
-
-      <input
-        id="regName"
-        placeholder="Player Name"
-      >
-
-      <input
-        id="regPhone"
-        placeholder="ဖုန်းနံပါတ်"
-      >
-
-      <input
-        id="regPassword"
-        type="password"
-        placeholder="Password"
-      >
-
-      <button
-        class="primary"
-        onclick="register()"
-      >
-        Register
-      </button>
-
-      <button
-        class="secondary"
-        onclick="showLogin()"
-      >
-        Login ပြန်ဝင်မည်
-      </button>
-
+  <div class="timer-card">
+    <div>
+      <div>Win Go 1Min</div>
+      <small id="periodDisplay">P: -</small>
     </div>
-
+    <div class="timer-clock" id="timerDisplay">00:00</div>
   </div>
 
-</div>
-
-
-<!-- =====================
-     APP
-===================== -->
-
-<div
-  id="app"
-  class="hidden"
->
-
-<header class="header">
-
-  <div class="logo">
-    👑 CKLOTTERY
+  <!-- Betting Buttons -->
+  <div class="color-btns">
+    <button class="btn bg-green" onclick="placeBet('color', 'green', 1000)">အစိမ်း</button>
+    <button class="btn bg-purple" onclick="placeBet('color', 'purple', 1000)">ခရမ်း</button>
+    <button class="btn bg-red" onclick="placeBet('color', 'red', 1000)">အနီ</button>
   </div>
 
-  <div class="unit">
-    U <span id="headerUnit">0</span>
+  <div class="number-grid">
+    <button class="num-btn bg-purple" onclick="placeBet('number', 0, 1000)">0</button>
+    <button class="num-btn bg-green" onclick="placeBet('number', 1, 1000)">1</button>
+    <button class="num-btn bg-red" onclick="placeBet('number', 2, 1000)">2</button>
+    <button class="num-btn bg-green" onclick="placeBet('number', 3, 1000)">3</button>
+    <button class="num-btn bg-red" onclick="placeBet('number', 4, 1000)">4</button>
+    <button class="num-btn bg-purple" onclick="placeBet('number', 5, 1000)">5</button>
+    <button class="num-btn bg-red" onclick="placeBet('number', 6, 1000)">6</button>
+    <button class="num-btn bg-green" onclick="placeBet('number', 7, 1000)">7</button>
+    <button class="num-btn bg-red" onclick="placeBet('number', 8, 1000)">8</button>
+    <button class="num-btn bg-green" onclick="placeBet('number', 9, 1000)">9</button>
   </div>
 
-</header>
-
-
-<!-- GAME -->
-
-<main id="gamePage">
-
-  <div class="card hero">
-
-    <div class="timer-row">
-
-      <div>
-
-        <small>
-          Win Go 1Min
-        </small>
-
-        <div
-          id="period"
-          style="
-            font-weight:900;
-            margin-top:4px;
-          "
-        >
-          CK-000001
-        </div>
-
-      </div>
-
-      <div
-        id="timer"
-        class="timer"
-      >
-        00:60
-      </div>
-
-    </div>
-
-    <div
-      style="
-        margin-top:12px;
-        font-size:12px;
-        opacity:.8;
-      "
-    >
-      👥 ဒီ Round မှာ
-      <b id="betCount">0</b>
-      ကြိမ်ရွေးထားပါတယ်
-    </div>
-
+  <div class="size-btns">
+    <button class="btn bg-big" onclick="placeBet('size', 'big', 1000)">အကြီး (5-9)</button>
+    <button class="btn bg-small" onclick="placeBet('size', 'small', 1000)">အသေး (0-4)</button>
   </div>
 
-
-  <div class="card">
-
-    <div
-      style="
-        color:#9ca3af;
-        margin-bottom:10px;
-      "
-    >
-      ရွေးချယ်ရန်
-    </div>
-
-    <div class="grid3">
-
-      <button
-        class="bet green"
-        onclick="openBet('အစိမ်း')"
-      >
-        အစိမ်း
-      </button>
-
-      <button
-        class="bet purple"
-        onclick="openBet('ခရမ်း')"
-      >
-        ခရမ်း
-      </button>
-
-      <button
-        class="bet red"
-        onclick="openBet('အနီ')"
-      >
-        အနီ
-      </button>
-
-    </div>
-
-
-    <div class="grid5">
-
-      <button
-        class="bet purple"
-        onclick="openBet('0')"
-      >0</button>
-
-      <button
-        class="bet green"
-        onclick="openBet('1')"
-      >1</button>
-
-      <button
-        class="bet red"
-        onclick="openBet('2')"
-      >2</button>
-
-      <button
-        class="bet green"
-        onclick="openBet('3')"
-      >3</button>
-
-      <button
-        class="bet red"
-        onclick="openBet('4')"
-      >4</button>
-
-      <button
-        class="bet purple"
-        onclick="openBet('5')"
-      >5</button>
-
-      <button
-        class="bet green"
-        onclick="openBet('6')"
-      >6</button>
-
-      <button
-        class="bet red"
-        onclick="openBet('7')"
-      >7</button>
-
-      <button
-        class="bet green"
-        onclick="openBet('8')"
-      >8</button>
-
-      <button
-        class="bet red"
-        onclick="openBet('9')"
-      >9</button>
-
-    </div>
-
-
-    <div class="grid2">
-
-      <button
-        class="bet orange"
-        onclick="openBet('အကြီး')"
-      >
-        အကြီး 5-9
-      </button>
-
-      <button
-        class="bet blue"
-        onclick="openBet('အသေး')"
-      >
-        အသေး 0-4
-      </button>
-
-    </div>
-
-  </div>
-
-
-  <div class="card">
-
-    <b
-      style="color:#9ca3af"
-    >
-      📜 Result History
-    </b>
-
-    <table
-      style="margin-top:10px"
-    >
-
+  <!-- Game History Record Table -->
+  <div class="history-card">
+    <h4 style="margin-top:0; color:#38bdf8;">📜 ထွက်ခဲ့သည့် မှတ်တမ်းများ (History)</h4>
+    <table>
       <thead>
-
         <tr>
-          <th>Round</th>
-          <th>ဂဏန်း</th>
+          <th>Period</th>
+          <th>Number</th>
           <th>Size</th>
-          <th>Color</th>
         </tr>
-
       </thead>
-
-      <tbody
-        id="history"
-      ></tbody>
-
+      <tbody id="historyTable">
+        <tr><td colspan="3">Waiting for rounds...</td></tr>
+      </tbody>
     </table>
-
   </div>
-
-</main>
-
-
-<!-- PROFILE -->
-
-<main
-  id="profilePage"
-  class="hidden"
->
-
-  <div class="card profile">
-
-    <div class="avatar">
-      👤
-    </div>
-
-    <h2 id="profileName">
-      Player
-    </h2>
-
-    <div class="id">
-
-      PLAYER ID
-
-      <br>
-
-      <b id="profileId">
-        CK-00000000
-      </b>
-
-    </div>
-
-    <div
-      style="
-        color:#9ca3af;
-      "
-    >
-      လက်ကျန် Unit
-
-      <br>
-
-      <b
-        id="profileUnit"
-        style="
-          color:#fbbf24;
-          font-size:22px;
-        "
-      >
-        0
-      </b>
-
-    </div>
-
-  </div>
-
-
-  <div class="card">
-
-    <h3
-      style="
-        color:#f59e0b;
-        margin-bottom:10px;
-      "
-    >
-      👥 Players
-    </h3>
-
-    <div
-      id="onlinePlayers"
-    ></div>
-
-  </div>
-
-</main>
-
-
-<!-- ADMIN -->
-
-<main
-  id="adminPage"
-  class="hidden"
->
-
-  <div class="card">
-
-    <div class="admin-head">
-
-      <h2
-        style="
-          color:#f97316;
-        "
-      >
-        👑 Admin Panel
-      </h2>
-
-      <span
-        style="
-          color:#22c55e;
-        "
-      >
-        ADMIN
-      </span>
-
-    </div>
-
-  </div>
-
-
-  <div class="card">
-
-    <h3>
-      Player Management
-    </h3>
-
-    <div
-      id="adminPlayers"
-    ></div>
-
-  </div>
-
-</main>
-
-
-<!-- NAV -->
-
-<nav class="nav">
-
-  <button
-    id="gameNav"
-    class="active"
-    onclick="tab('game')"
-  >
-    🎰
-    <br>
-    ဂိမ်း
-  </button>
-
-  <button
-    id="profileNav"
-    onclick="tab('profile')"
-  >
-    👤
-    <br>
-    Profile
-  </button>
-
-  <button
-    id="adminNav"
-    class="hidden"
-    onclick="tab('admin')"
-  >
-    👑
-    <br>
-    Admin
-  </button>
-
-</nav>
-
 </div>
 
-
-<!-- =====================
-     BET MODAL
-===================== -->
-
-<div
-  id="betModal"
-  class="modal hidden"
->
-
-  <div class="modalbox">
-
-    <h2
-      style="color:#fbbf24"
-    >
-      လောင်းကြေးရွေးချယ်မှု
-    </h2>
-
-    <p
-      id="selectedText"
-      style="
-        margin:10px;
-        color:#93c5fd;
-        font-weight:900;
-      "
-    >
-      --
-    </p>
-
-    <input
-      id="betAmount"
-      type="number"
-      min="1"
-      value="100"
-      placeholder="Unit"
-    >
-
-    <button
-      class="primary"
-      onclick="confirmBet()"
-    >
-      အတည်ပြုမည်
-    </button>
-
-    <button
-      class="secondary"
-      onclick="closeModal('betModal')"
-    >
-      မလုပ်တော့ပါ
-    </button>
-
+<div class="popup-modal" id="resultModal">
+  <div class="popup-content">
+    <h2 id="popupTitle"></h2>
+    <p id="popupDetails"></p>
+    <button class="btn bg-big" onclick="closePopup()">OK</button>
   </div>
-
 </div>
-
-
-<!-- =====================
-     RESULT MODAL
-===================== -->
-
-<div
-  id="resultModal"
-  class="modal hidden"
->
-
-  <div
-    id="resultBox"
-    class="modalbox result-win"
-  >
-
-    <div
-      id="resultIcon"
-      class="trophy"
-    >
-      🏆
-    </div>
-
-    <h2
-      id="resultTitle"
-    >
-      အနိုင်ရပါတယ်!
-    </h2>
-
-    <div
-      style="
-        display:flex;
-        justify-content:center;
-        gap:7px;
-        margin-top:12px;
-      "
-    >
-
-      <span
-        id="resultColor"
-        style="
-          background:#059669;
-          padding:6px 11px;
-          border-radius:20px;
-        "
-      >
-        --
-      </span>
-
-      <span
-        id="resultNumber"
-        style="
-          background:#334155;
-          padding:6px 11px;
-          border-radius:20px;
-        "
-      >
-        --
-      </span>
-
-      <span
-        id="resultSize"
-        style="
-          background:#d97706;
-          padding:6px 11px;
-          border-radius:20px;
-        "
-      >
-        --
-      </span>
-
-    </div>
-
-    <div
-      id="resultAmount"
-      class="amount"
-    >
-      +0 U
-    </div>
-
-    <p
-      id="resultPeriod"
-    >
-      --
-    </p>
-
-    <button
-      class="primary"
-      style="
-        background:#111827;
-      "
-      onclick="closeModal('resultModal')"
-    >
-      ပိတ်မည်
-    </button>
-
-  </div>
-
-</div>
-
 
 <script>
+  const socket = io();
+  let currentUser = null;
+  let historyList = [];
 
-/* =========================
-   SOCKET
-========================= */
+  window.onload = () => {
+    const savedUser = localStorage.getItem('lottery_user');
+    if (savedUser) {
+      currentUser = JSON.parse(savedUser);
+      document.getElementById('authModal').style.display = 'none';
+      initUserSession();
+    }
+  };
 
-const socket =
-  io();
+  async function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
 
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
 
-/* =========================
-   STATE
-========================= */
-
-let currentUser = null;
-
-let isAdmin = false;
-
-let selectedSelection = "";
-
-
-/* =========================
-   TOAST
-========================= */
-
-function toast(text){
-
-  const box =
-    document.getElementById("toast");
-
-  box.textContent =
-    text;
-
-  box.classList.remove(
-    "hidden"
-  );
-
-  setTimeout(
-    () => {
-      box.classList.add(
-        "hidden"
-      );
-    },
-    2200
-  );
-
-}
-
-
-/* =========================
-   LOGIN
-========================= */
-
-function login(){
-
-  const phone =
-    document
-      .getElementById(
-        "loginPhone"
-      )
-      .value
-      .trim();
-
-  const password =
-    document
-      .getElementById(
-        "loginPassword"
-      )
-      .value;
-
-  if(!phone || !password){
-
-    toast(
-      "Login အချက်အလက် ဖြည့်ပါ"
-    );
-
-    return;
-
+    if (res.ok) {
+      currentUser = data.user;
+      localStorage.setItem('lottery_user', JSON.stringify(currentUser));
+      document.getElementById('authModal').style.display = 'none';
+      initUserSession();
+    } else { alert(data.error); }
   }
 
-  fetch(
-    "/api/login",
-    {
+  function initUserSession() {
+    document.getElementById('balanceDisplay').innerText = `K${currentUser.balance.toLocaleString()}`;
+    socket.emit('join', currentUser.username);
+  }
 
-      method:"POST",
-
-      headers:{
-        "Content-Type":
-          "application/json"
-      },
-
-      body:JSON.stringify({
-        phone,
-        password
-      })
-
-    }
-  )
-  .then(r => r.json())
-  .then(data => {
-
-    if(!data.success){
-
-      toast(
-        data.message
-      );
-
-      return;
-
-    }
-
-    currentUser =
-      data.user;
-
-    isAdmin =
-      data.admin;
-
-    localStorage.setItem(
-      "ck_phone",
-      phone
-    );
-
-    enterApp();
-
-  })
-  .catch(() => {
-
-    toast(
-      "Server ချိတ်မရပါ"
-    );
-
+  socket.on('timer_update', (data) => {
+    let secs = data.timer < 10 ? '0' + data.timer : data.timer;
+    document.getElementById('timerDisplay').innerText = `00:${secs}`;
+    document.getElementById('periodDisplay').innerText = `P: ${data.period}`;
   });
 
-}
-
-
-/* =========================
-   REGISTER
-========================= */
-
-function register(){
-
-  const name =
-    document
-      .getElementById(
-        "regName"
-      )
-      .value
-      .trim();
-
-  const phone =
-    document
-      .getElementById(
-        "regPhone"
-      )
-      .value
-      .trim();
-
-  const password =
-    document
-      .getElementById(
-        "regPassword"
-      )
-      .value;
-
-  if(
-    !phone ||
-    !password
-  ){
-
-    toast(
-      "အချက်အလက်ပြည့်စုံအောင် ဖြည့်ပါ"
-    );
-
-    return;
-
-  }
-
-  fetch(
-    "/api/register",
-    {
-
-      method:"POST",
-
-      headers:{
-        "Content-Type":
-          "application/json"
-      },
-
-      body:JSON.stringify({
-        name,
-        phone,
-        password
-      })
-
-    }
-  )
-  .then(r => r.json())
-  .then(data => {
-
-    if(!data.success){
-
-      toast(
-        data.message
-      );
-
-      return;
-
-    }
-
-    toast(
-      "Account ဖွင့်ပြီးပါပြီ"
-    );
-
-    currentUser =
-      data.user;
-
-    isAdmin =
-      false;
-
-    localStorage.setItem(
-      "ck_phone",
-      phone
-    );
-
-    enterApp();
-
+  socket.on('round_ended', (result) => {
+    historyList.unshift(result);
+    if(historyList.length > 10) historyList.pop();
+    renderHistory();
   });
 
-}
-
-
-/* =========================
-   ENTER APP
-========================= */
-
-function enterApp(){
-
-  document
-    .getElementById(
-      "loginPage"
-    )
-    .classList
-    .add("hidden");
-
-  document
-    .getElementById(
-      "registerPage"
-    )
-    .classList
-    .add("hidden");
-
-  document
-    .getElementById(
-      "app"
-    )
-    .classList
-    .remove("hidden");
-
-  if(isAdmin){
-
-    document
-      .getElementById(
-        "adminNav"
-      )
-      .classList
-      .remove("hidden");
-
-    document
-      .getElementById(
-        "gameNav"
-      )
-      .classList
-      .add("hidden");
-
-    document
-      .getElementById(
-        "profileNav"
-      )
-      .classList
-      .add("hidden");
-
-    tab("admin");
-
-    loadAdminPlayers();
-
-  }else{
-
-    updateUserUI();
-
-    tab("game");
-
+  function renderHistory() {
+    const tbody = document.getElementById('historyTable');
+    tbody.innerHTML = historyList.map(h => {
+      let bg = h.color === 'green' ? '#10b981' : (h.color === 'red' ? '#ef4444' : '#8b5cf6');
+      return `
+        <tr>
+          <td>${h.period}</td>
+          <td><span class="ball" style="background:${bg}">${h.number}</span></td>
+          <td>${h.size}</td>
+        </tr>
+      `;
+    }).join('');
   }
 
-}
-
-
-/* =========================
-   USER UI
-========================= */
-
-function updateUserUI(){
-
-  if(!currentUser)
-    return;
-
-  document
-    .getElementById(
-      "headerUnit"
-    )
-    .textContent =
-      Number(
-        currentUser.unit
-      ).toLocaleString();
-
-  document
-    .getElementById(
-      "profileName"
-    )
-    .textContent =
-      currentUser.name;
-
-  document
-    .getElementById(
-      "profileId"
-    )
-    .textContent =
-      currentUser.id;
-
-  document
-    .getElementById(
-      "profileUnit"
-    )
-    .textContent =
-      Number(
-        currentUser.unit
-      ).toLocaleString();
-
-}
-
-
-/* =========================
-   TAB
-========================= */
-
-function tab(type){
-
-  document
-    .getElementById(
-      "gamePage"
-    )
-    .classList
-    .toggle(
-      "hidden",
-      type !== "game"
-    );
-
-  document
-    .getElementById(
-      "profilePage"
-    )
-    .classList
-    .toggle(
-      "hidden",
-      type !== "profile"
-    );
-
-  document
-    .getElementById(
-      "adminPage"
-    )
-    .classList
-    .toggle(
-      "hidden",
-      type !== "admin"
-    );
-
-  document
-    .getElementById(
-      "gameNav"
-    )
-    .classList
-    .toggle(
-      "active",
-      type === "game"
-    );
-
-  document
-    .getElementById(
-      "profileNav"
-    )
-    .classList
-    .toggle(
-      "active",
-      type === "profile"
-    );
-
-  document
-    .getElementById(
-      "adminNav"
-    )
-    .classList
-    .toggle(
-      "active",
-      type === "admin"
-    );
-
-}
-
-
-/* =========================
-   BET
-========================= */
-
-function openBet(selection){
-
-  if(isAdmin)
-    return;
-
-  if(
-    !currentUser ||
-    Number(currentUser.unit) <= 0
-  ){
-
-    toast(
-      "Admin ဆီက Unit ရယူပြီးမှ ကစားနိုင်ပါတယ်"
-    );
-
-    return;
-
-  }
-
-  selectedSelection =
-    selection;
-
-  document
-    .getElementById(
-      "selectedText"
-    )
-    .textContent =
-      "ရွေးချယ်မှု: " +
-      selection;
-
-  document
-    .getElementById(
-      "betModal"
-    )
-    .classList
-    .remove("hidden");
-
-}
-
-
-/* =========================
-   CONFIRM BET
-========================= */
-
-function confirmBet(){
-
-  const amount =
-    Number(
-      document
-        .getElementById(
-          "betAmount"
-        )
-        .value
-    );
-
-  if(
-    !amount ||
-    amount <= 0
-  ){
-
-    toast(
-      "Unit ပမာဏ ဖြည့်ပါ"
-    );
-
-    return;
-
-  }
-
-  if(
-    amount >
-    currentUser.unit
-  ){
-
-    toast(
-      "Unit မလုံလောက်ပါ"
-    );
-
-    return;
-
-  }
-
-  fetch(
-    "/api/bet",
-    {
-
-      method:"POST",
-
-      headers:{
-        "Content-Type":
-          "application/json"
-      },
-
-      body:JSON.stringify({
-
-        phone:
-          currentUser.phone,
-
-        selection:
-          selectedSelection,
-
-        amount
-
-      })
-
-    }
-  )
-  .then(r => r.json())
-  .then(data => {
-
-    if(!data.success){
-
-      toast(
-        data.message
-      );
-
-      return;
-
-    }
-
-    currentUser.unit -=
-      amount;
-
-    updateUserUI();
-
-    closeModal(
-      "betModal"
-    );
-
-    toast(
-      "ရွေးချယ်မှု မှတ်သားပြီးပါပြီ"
-    );
-
+  socket.on('balance_updated', (newBalance) => {
+    currentUser.balance = newBalance;
+    document.getElementById('balanceDisplay').innerText = `K${newBalance.toLocaleString()}`;
   });
 
-}
+  socket.on('bet_result', (data) => {
+    const modal = document.getElementById('resultModal');
+    const title = document.getElementById('popupTitle');
+    const details = document.getElementById('popupDetails');
 
+    if (data.won) {
+      title.innerText = "🎉 နိုင်ပါသည်!";
+      title.style.color = "#10b981";
+      details.innerText = `ထွက်ဂဏန်း: ${data.result.number} | ရရှိငွေ: K${data.payout}`;
+    } else {
+      title.innerText = "😢 ရှုံးပါသည်";
+      title.style.color = "#ef4444";
+      details.innerText = `ထွက်ဂဏန်း: ${data.result.number}`;
+    }
+    modal.style.display = 'flex';
+  });
 
-/* =========================
-   SOCKET GAME STATE
-========================= */
+  function placeBet(type, value, amount) {
+    if (!currentUser) return;
+    socket.emit('place_bet', { username: currentUser.username, type, value, amount });
+  }
 
-socket.on(
-  "game_state",
-  state => {
+  function closePopup() {
+    document.getElementById('resultModal').style.display = 'none';
+  }
+</script>
+</body>
+</html>
 
-    u
