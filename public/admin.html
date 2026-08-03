@@ -1,318 +1,136 @@
 <!DOCTYPE html>
-<html lang="my">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>CK Lottery - Admin Control Center</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚙️ Admin Full Live Dashboard</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-    body { background: #0f172a; color: white; padding: 16px; max-width: 900px; margin: 0 auto; -webkit-overflow-scrolling: touch; }
-    
-    .card { background: #1e293b; padding: 16px; border-radius: 16px; margin-bottom: 16px; border: 1px solid #334155; }
-    h2 { color: #f59e0b; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; font-size: 18px; }
-    h3 { color: #38bdf8; margin-bottom: 12px; font-size: 15px; }
-    
-    /* Fix Keyboard Input Lock on Mobile */
-    input, select { 
-      padding: 12px; 
-      border-radius: 10px; 
-      border: 1px solid #475569; 
-      background: #0f172a; 
-      color: white; 
-      outline: none; 
-      margin-bottom: 8px; 
-      font-size: 16px; 
-      width: 100%;
-      -webkit-user-select: text;
-      user-select: text;
-    }
-
-    button { padding: 12px 16px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; background: #3b82f6; color: white; font-size: 14px; }
-    .btn-danger { background: #ef4444; }
-    .btn-success { background: #10b981; }
-
-    .table-responsive { width: 100%; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; text-align: left; min-width: 480px; }
-    th, td { padding: 10px; border-bottom: 1px solid #334155; font-size: 13px; }
-
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-    .modal-content { background: #1e293b; padding: 24px; border-radius: 20px; width: 90%; max-width: 360px; text-align: center; }
-    .hidden { display: none !important; }
-    .stats-box { background: #0f172a; padding: 12px; border-radius: 10px; font-size: 13px; color: #fbbf24; }
-    .receipt-preview { width: 100px; border-radius: 8px; cursor: pointer; border: 1px solid #38bdf8; margin-top: 4px; }
+    body { font-family: sans-serif; background: #0b0f19; color: #fff; margin: 0; padding: 15px; }
+    .card { background: #161e2e; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #334155; }
+    h3 { margin-top: 0; color: #f59e0b; }
+    input, button, select { padding: 10px; margin: 5px 0; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #fff; width: 100%; box-sizing: border-box; }
+    button { cursor: pointer; background: #f59e0b; color: #000; font-weight: bold; border: none; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th, td { border: 1px solid #334155; padding: 8px; text-align: center; }
+    th { background: #1e293b; color: #38bdf8; }
+    .timer-badge { font-size: 20px; font-weight: bold; color: #38bdf8; float: right; }
   </style>
 </head>
 <body>
 
-  <!-- Admin Login Modal -->
-  <div id="admin-login-modal" class="modal">
-    <div class="modal-content">
-      <h2 style="color: #f59e0b; justify-content: center;">👑 Admin Login</h2>
-      <input type="number" id="admin-phone" placeholder="Admin ဖုန်းနံပါတ်">
-      <input type="password" id="admin-pass" placeholder="စကားဝှက်">
-      <button class="btn-success" style="width: 100%;" onclick="adminLogin()">Login ဝင်မည်</button>
-    </div>
+  <h2>⚙️ Admin Control Panel <span class="timer-badge" id="adminTimer">00:00</span></h2>
+  <a href="/" style="color: #38bdf8; font-weight: bold;">← Back to Main Game</a>
+
+  <!-- 1. Outcome Control -->
+  <div class="card" style="border-color: #ef4444; margin-top: 15px;">
+    <h3 style="color: #ef4444;">🎲 Set Next Round Result</h3>
+    <p style="font-size: 12px; color: #94a3b8;">နောက်တစ်ကြိမ် ထွက်မယ့် ဂဏန်းကို ရွေးပါ (Auto ထားရင် Random ထွက်ပါမယ်)</p>
+    <select id="targetOutcome">
+      <option value="">🎰 Auto Random</option>
+      <option value="0">Number 0 (Purple/Red)</option>
+      <option value="1">Number 1 (Green)</option>
+      <option value="2">Number 2 (Red)</option>
+      <option value="3">Number 3 (Green)</option>
+      <option value="4">Number 4 (Red)</option>
+      <option value="5">Number 5 (Purple/Green)</option>
+      <option value="6">Number 6 (Red)</option>
+      <option value="7">Number 7 (Green)</option>
+      <option value="8">Number 8 (Red)</option>
+      <option value="9">Number 9 (Green)</option>
+    </select>
+    <button onclick="setOutcome()" style="background: #ef4444; color: #fff;">Save Outcome</button>
   </div>
 
-  <!-- Admin Panel -->
-  <div id="admin-panel" class="hidden">
-    <h2>
-      <span>👑 Admin Control Center</span>
-      <button onclick="adminLogout()" style="background:#475569; font-size:12px;">Logout</button>
-    </h2>
-
-    <!-- Realtime Analytics -->
-    <div class="card">
-      <h3>📊 လက်ရှိ ပွဲစဉ် လောင်းကြေး အခြေအနေ</h3>
-      <div class="stats-box">
-        <div>ပွဲစဉ်: <b id="current-period-text">--</b> | ကျန်ချိန်: <b id="current-time-text">--</b>s</div>
-        <div style="margin-top: 6px; font-size: 15px;">စုစုပေါင်း လောင်းကြေး: <b id="grand-total-text" style="color:#10b981;">0</b> ကျပ်</div>
-        <div id="top-bets-list" style="margin-top: 8px; color: #cbd5e1;"></div>
-      </div>
-    </div>
-
-    <!-- Period Selection Dropdown Result Override -->
-    <div class="card">
-      <h3>🎯 ပွဲစဉ်အလိုက် ထွက်ဂဏန်း ကြိုတင် သတ်မှတ်ရန်</h3>
-      <div>
-        <label style="font-size: 12px; color: #9ca3af;">ပွဲစဉ်နံပါတ် ရွေးချယ်ပါ:</label>
-        <select id="period-dropdown"></select>
-        
-        <label style="font-size: 12px; color: #9ca3af;">ထွက်စေလိုသည့် ဂဏန်း (0-9):</label>
-        <select id="target-number">
-          <option value="0">0</option>
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="6">6</option>
-          <option value="7">7</option>
-          <option value="8">8</option>
-          <option value="9">9</option>
-        </select>
-
-        <button class="btn-success" style="width:100%; margin-top:8px;" onclick="setPeriodResult()">ဂဏန်း သတ်မှတ်မည်</button>
-      </div>
-    </div>
-
-    <!-- Transactions Requests -->
-    <div class="card">
-      <h3>💸 ငွေသွင်း/ငွေထုတ် တောင်းဆိုမှုများ</h3>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>အမျိုးအစား</th>
-              <th>User ဖုန်း</th>
-              <th>ပမာဏ</th>
-              <th>Method</th>
-              <th>ပြေစာ/Action</th>
-            </tr>
-          </thead>
-          <tbody id="tx-rows"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- User Manager -->
-    <div class="card">
-      <h3>👥 User မန်နေးဂျာ</h3>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>ဖုန်းနံပါတ်</th>
-              <th>Balance</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="user-rows"></tbody>
-        </table>
-      </div>
-    </div>
+  <!-- 2. Live Current Round Bets Tracker -->
+  <div class="card">
+    <h3>📊 Live Bets (ခုပွဲမှာ User တွေ လောင်းထားသည်များ)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Type</th>
+          <th>Value</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody id="liveBetsTable">
+        <tr><td colspan="4">No bets placed yet in this round</td></tr>
+      </tbody>
+    </table>
   </div>
 
-  <script>
-    const socket = io();
+  <!-- 3. Balance Control -->
+  <div class="card">
+    <h3>💰 User Balance Deposit / Withdraw</h3>
+    <input type="text" id="targetUser" placeholder="Username (e.g. user1)">
+    <input type="number" id="transferAmt" placeholder="Amount (e.g. 5000 or -2000)">
+    <button onclick="updateBalance()">Update Balance</button>
+  </div>
 
-    function checkAdminSession() {
-      if (localStorage.getItem('admin_token') === 'ADMIN_SECRET_SESSION_TOKEN') {
-        document.getElementById('admin-login-modal').classList.add('hidden');
-        document.getElementById('admin-panel').classList.remove('hidden');
-        loadUsers();
-        loadPendingTransactions();
-        loadUpcomingPeriods();
-      }
+<script>
+  const socket = io();
+
+  socket.on('timer_update', (data) => {
+    let secs = data.timer < 10 ? '0' + data.timer : data.timer;
+    document.getElementById('adminTimer').innerText = `P:${data.period} | 00:${secs}`;
+  });
+
+  // Track live bets
+  let currentBetsList = [];
+  socket.on('admin_bet_update', (bet) => {
+    currentBetsList.push(bet);
+    renderLiveBets();
+  });
+
+  socket.on('round_ended', () => {
+    currentBetsList = []; // clear on new round
+    renderLiveBets();
+  });
+
+  function renderLiveBets() {
+    const tbody = document.getElementById('liveBetsTable');
+    if (currentBetsList.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4">No bets placed yet in this round</td></tr>';
+      return;
     }
+    tbody.innerHTML = currentBetsList.map(b => `
+      <tr>
+        <td><b>${b.username}</b></td>
+        <td>${b.type}</td>
+        <td><span style="color:#f59e0b">${b.value}</span></td>
+        <td>K${b.amount}</td>
+      </tr>
+    `).join('');
+  }
 
-    function adminLogin() {
-      fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: document.getElementById('admin-phone').value, password: document.getElementById('admin-pass').value })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          localStorage.setItem('admin_token', data.token);
-          checkAdminSession();
-        } else alert(data.message);
-      });
-    }
-
-    function adminLogout() {
-      localStorage.removeItem('admin_token');
-      location.reload();
-    }
-
-    function loadUpcomingPeriods() {
-      fetch('/api/admin/upcoming-periods')
-        .then(r => r.json())
-        .then(d => {
-          if (d.success) {
-            const dropdown = document.getElementById('period-dropdown');
-            dropdown.innerHTML = '';
-            d.periods.forEach((p, idx) => {
-              const opt = document.createElement('option');
-              opt.value = p;
-              opt.textContent = idx === 0 ? `[လက်ရှိပွဲစဉ်] - ${p}` : `[နောက်ပွဲစဉ် ${idx}] - ${p}`;
-              dropdown.appendChild(opt);
-            });
-          }
-        });
-    }
-
-    function setPeriodResult() {
-      const period = document.getElementById('period-dropdown').value;
-      const number = document.getElementById('target-number').value;
-
-      fetch('/api/admin/set-period-result', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ period, number })
-      })
-      .then(r => r.json())
-      .then(d => alert(d.message));
-    }
-
-    function loadPendingTransactions() {
-      fetch('/api/admin/pending-transactions').then(r => r.json()).then(rows => {
-        const tbody = document.getElementById('tx-rows');
-        tbody.innerHTML = '';
-        rows.forEach(tx => {
-          const tr = document.createElement('tr');
-          let actionCell = '';
-
-          if (tx.status === 'PENDING_ADMIN_NUMBER') {
-            actionCell = `
-              <input type="number" id="admin-num-${tx.id}" placeholder="ငွေလက်ခံမည့်ဖုန်း" style="width:140px; margin-bottom:4px;">
-              <button class="btn-success" onclick="sendDepositNumber(${tx.id})">နံပါတ် ပို့မည်</button>
-            `;
-          } else if (tx.status === 'PENDING_APPROVAL') {
-            let imgHtml = tx.receipt_img ? `<br><a href="${tx.receipt_img}" target="_blank"><img src="${tx.receipt_img}" class="receipt-preview"></a>` : '';
-            actionCell = `
-              <div style="font-size:11px;">လွှဲဖုန်း: ${tx.user_pay_phone || '-'} ${imgHtml}</div>
-              <div style="margin-top:6px;">
-                <button class="btn-success" onclick="processTx(${tx.id}, 'APPROVE')">ခွင့်ပြုမည်</button>
-                <button class="btn-danger" onclick="processTx(${tx.id}, 'REJECT')">ငြင်းပယ်မည်</button>
-              </div>
-            `;
-          } else {
-            actionCell = `<span style="color:#fbbf24;">User ငွေလွှဲပြေစာ တင်သည်ကို စောင့်နေသည်</span>`;
-          }
-
-          tr.innerHTML = `
-            <td><b style="color:${tx.type === 'Deposit' ? '#10b981' : '#ef4444'}">${tx.type}</b></td>
-            <td>${tx.phone}</td>
-            <td><b>K${tx.amount.toLocaleString()}</b></td>
-            <td>${tx.method}</td>
-            <td>${actionCell}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      });
-    }
-
-    function sendDepositNumber(txId) {
-      const adminPayNumber = document.getElementById(`admin-num-${txId}`).value;
-      if (!adminPayNumber) return alert("ဖုန်းနံပါတ် ဖြည့်သွင်းပါ");
-
-      fetch('/api/admin/set-deposit-number', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ txId, adminPayNumber })
-      }).then(() => loadPendingTransactions());
-    }
-
-    function processTx(txId, action) {
-      fetch('/api/admin/process-transaction', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ txId, action })
-      }).then(() => {
-        loadPendingTransactions();
-        loadUsers();
-      });
-    }
-
-    function loadUsers() {
-      fetch('/api/admin/users').then(r => r.json()).then(users => {
-        const tbody = document.getElementById('user-rows');
-        tbody.innerHTML = '';
-        users.forEach(u => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td><b>${u.phone}</b></td>
-            <td><input type="number" value="${u.balance}" id="bal-${u.phone}" style="width:100px;"> <button onclick="updateBalance('${u.phone}')">Save</button></td>
-            <td><span style="color:${u.status === 'BANNED' ? '#ef4444' : '#10b981'}; font-weight:bold;">${u.status}</span></td>
-            <td><button class="${u.status === 'BANNED' ? 'btn-success' : 'btn-danger'}" onclick="toggleBan('${u.phone}', '${u.status}')">${u.status === 'BANNED' ? 'Unban' : 'Ban'}</button></td>
-          `;
-          tbody.appendChild(tr);
-        });
-      });
-    }
-
-    function updateBalance(phone) {
-      const bal = parseFloat(document.getElementById(`bal-${phone}`).value);
-      fetch('/api/admin/update-balance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, balance: bal })
-      }).then(() => loadUsers());
-    }
-
-    function toggleBan(phone, currentStatus) {
-      fetch('/api/admin/toggle-ban', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, status: currentStatus === 'BANNED' ? 'ACTIVE' : 'BANNED' })
-      }).then(() => loadUsers());
-    }
-
-    socket.on('timer_tick', (data) => {
-      document.getElementById('current-period-text').textContent = data.period;
-      document.getElementById('current-time-text').textContent = data.timeLeft;
-      document.getElementById('grand-total-text').textContent = data.grandTotal ? data.grandTotal.toLocaleString() : 0;
-
-      let summaryHtml = '';
-      if (data.betSummary) {
-        for (const [key, val] of Object.entries(data.betSummary)) {
-          summaryHtml += `<span style="margin-right:12px;">[${key}]: <b>K${val.toLocaleString()}</b></span>`;
-        }
-      }
-      document.getElementById('top-bets-list').innerHTML = summaryHtml || 'လောင်းကြေး မရှိသေးပါ။';
+  async function setOutcome() {
+    const number = document.getElementById('targetOutcome').value;
+    const res = await fetch('/api/admin/set-result', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number })
     });
+    if(res.ok) alert('အထွက်ဂဏန်း သတ်မှတ်ပြီးပါပြီ!');
+  }
 
-    socket.on('new_game_result', () => {
-      loadUpcomingPeriods();
+  async function updateBalance() {
+    const username = document.getElementById('targetUser').value;
+    const amount = document.getElementById('transferAmt').value;
+
+    const res = await fetch('/api/admin/update-balance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, amount })
     });
-
-    setInterval(loadPendingTransactions, 4000);
-    checkAdminSession();
-  </script>
+    const data = await res.json();
+    if(res.ok) {
+      alert(`User: ${username} ၏ လက်ကျန်ငွေ ပြင်ဆင်ပြီးပါပြီ။ Current: K${data.balance}`);
+    } else {
+      alert(data.error);
+    }
+  }
+</script>
 </body>
 </html>
 
